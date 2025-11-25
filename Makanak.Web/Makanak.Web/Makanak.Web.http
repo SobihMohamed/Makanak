@@ -1,0 +1,6 @@
+@Makanak.Web_HostAddress = http://localhost:5054
+
+GET {{Makanak.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
