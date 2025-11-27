@@ -3,7 +3,7 @@ using Makanak.Domain.Models.Identity;
 
 namespace Makanak.Domain.Models.NotifyEnities
 {
-    public class Notification : BaseEntity
+    public class Notification : BaseEntity<int>
     {
 
         // Reciver of the notification

@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Makanak.Web\Makanak.Shared\Makanak.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

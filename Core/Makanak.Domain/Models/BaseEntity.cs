@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Makanak.Domain.Models
 {
-    public class BaseEntity
+    public class BaseEntity<Key>
     {
-        public int Id { get; set; }
+        public Key Id { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? CreatedBy { get; set; }
         public string LastModifiedBy { get; set; } = null!;
