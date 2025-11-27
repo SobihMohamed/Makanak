@@ -1,4 +1,4 @@
-﻿using Makanak.Domain.Identity.Models;
+﻿using Makanak.Domain.Models.Identity;
 using Makanak.Persistance.Contexts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +19,11 @@ namespace Makanak.Persistance.ProgramServices
             #region DB Connections
             services.AddDbContext<MakanakDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-
+            // مدام استخدمنا ال IdentityCore 
+            // دي افصل من ال Identity 
+            // بس بتضيف بقا ال [identiyRole] لوحدها 
+            // وبتزود كمان ال [AddDefaultTokenProvider] and [Service.AddDataProtection] 
+            //  عشان تشتغل مع ال Roles وال Password Reset و ال Email Confirmation
             services.AddIdentityCore<ApplicationUser>()
              .AddRoles<IdentityRole>() // عشان تشغل الـ Roles
              .AddEntityFrameworkStores<MakanakDbContext>()

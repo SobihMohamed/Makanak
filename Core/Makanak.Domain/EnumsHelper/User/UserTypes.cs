@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Makanak.Domain.Identity.EnumsHelper
+namespace Makanak.Domain.EnumsHelper.User
 {
     public enum UserTypes
     {

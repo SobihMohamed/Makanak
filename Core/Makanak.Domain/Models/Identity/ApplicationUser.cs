@@ -1,4 +1,5 @@
-﻿using Makanak.Domain.Identity.EnumsHelper;
+﻿using Makanak.Domain.EnumsHelper.User;
+using Makanak.Domain.Models.NotifyEnities;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Makanak.Domain.Identity.Models
+namespace Makanak.Domain.Models.Identity
 {
     public class ApplicationUser : IdentityUser
     {
@@ -32,5 +33,9 @@ namespace Makanak.Domain.Identity.Models
         public UserStatus UserStatus { get; set; } = UserStatus.Pending;
         public string? RejectedReason { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        #region Navigation Properties
+        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        #endregion
     }
 }

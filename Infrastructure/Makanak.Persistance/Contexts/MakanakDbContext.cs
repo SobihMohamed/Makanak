@@ -1,4 +1,4 @@
-﻿using Makanak.Domain.Identity.Models;
+﻿using Makanak.Domain.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +15,8 @@ namespace Makanak.Persistance.Contexts
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            builder.Entity<ApplicationUser>(entity =>
-            {
-                entity.ToTable(name: "Users");
-                entity.Property(e => e.Name).IsRequired().HasColumnType("Varchar(100)");
-                entity.Property(e => e.NationalId).HasColumnType("Char(14)");
-            });
+            builder.ApplyConfigurationsFromAssembly(typeof(MakanakDbContext).Assembly);
+           
             builder.Entity<IdentityRole>().ToTable("Roles");
             builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
             builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
