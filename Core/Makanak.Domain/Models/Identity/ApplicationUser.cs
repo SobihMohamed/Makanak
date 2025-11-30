@@ -1,5 +1,6 @@
 ﻿using Makanak.Domain.EnumsHelper.User;
 using Makanak.Domain.Models.NotifyEnities;
+using Makanak.Domain.Models.PropertyEntities;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,7 @@ namespace Makanak.Domain.Models.Identity
 
         #region Navigation Properties
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
         #endregion
     }
 }
