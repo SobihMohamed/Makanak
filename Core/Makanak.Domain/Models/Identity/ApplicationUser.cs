@@ -1,6 +1,9 @@
 ﻿using Makanak.Domain.EnumsHelper.User;
+using Makanak.Domain.Models.BookingEntities;
+using Makanak.Domain.Models.DisputeEntities;
 using Makanak.Domain.Models.NotifyEnities;
 using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Domain.Models.ReviewEntities;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -37,7 +40,12 @@ namespace Makanak.Domain.Models.Identity
 
         #region Navigation Properties
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-        public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
+        public virtual ICollection<Property> OwnedProperties { get; set; } = new List<Property>();
+        public virtual ICollection<Booking> TenantBookings { get; set; } = new List<Booking>();
+        public virtual ICollection<Booking> IncomingBookings { get; set; } = new List<Booking>();
+
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public virtual ICollection<Dispute> Disputes { get; set; } = new List<Dispute>();
         #endregion
     }
 }

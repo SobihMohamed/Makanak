@@ -1,5 +1,7 @@
-﻿using Makanak.Domain.Models.Identity;
+﻿using Makanak.Domain.Models.BookingEntities;
+using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.LocationEntities;
+using Makanak.Domain.Models.ReviewEntities;
 using Makanak.Shared.EnumsHelper.Property;
 using System;
 using System.Collections.Generic;
@@ -32,9 +34,12 @@ namespace Makanak.Domain.Models.PropertyEntities
 
         public string OwnerId { get; set; } = null!;
         public virtual ApplicationUser Owner { get; set; } = null!;
-       
-        public ICollection<PropertyImage> PropertyImages { get; set; } = new List<PropertyImage>();
-        public ICollection<Amenity> Amenities { get; set; } = new List<Amenity>();
-        //public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        public decimal CommissionPercentage { get; set; } = 10; // Default commission is 10%
+
+        public virtual ICollection<PropertyImage> PropertyImages { get; set; } = new List<PropertyImage>();
+        public virtual ICollection<Amenity> Amenities { get; set; } = new List<Amenity>();
+        public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+
     }
 }

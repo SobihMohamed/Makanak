@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Makanak.Persistance.Migrations
 {
     [DbContext(typeof(MakanakDbContext))]
-    [Migration("20251130013353_Property_Aminitites_PropertyImages_Entites")]
-    partial class Property_Aminitites_PropertyImages_Entites
+    [Migration("20251201214811_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -38,6 +38,199 @@ namespace Makanak.Persistance.Migrations
                     b.HasIndex("PropertiesId");
 
                     b.ToTable("PropertyAmenities", (string)null);
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.BookingEntities.Booking", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AmountToPayToOwner")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CheckInDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CheckInQrCode")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CheckOutDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CommissionPaid")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("HasDispute")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsQrScanned")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRefunded")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumberOfGuests")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentIntentId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PricePerNight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SpecialRequests")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Booking");
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.DisputeEntities.Dispute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminComment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ComplaintId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("ComplaintId");
+
+                    b.ToTable("Dispute");
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.DisputeEntities.DisputeImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DisputeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisputeId");
+
+                    b.ToTable("DisputeImages", (string)null);
                 });
 
             modelBuilder.Entity("Makanak.Domain.Models.Identity.ApplicationUser", b =>
@@ -312,6 +505,9 @@ namespace Makanak.Persistance.Migrations
                     b.Property<int>("Bedrooms")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("CommissionPercentage")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -414,6 +610,59 @@ namespace Makanak.Persistance.Migrations
                     b.HasIndex("PropertyId");
 
                     b.ToTable("PropertyImages", (string)null);
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.ReviewEntities.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastModifiedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique();
+
+                    b.HasIndex("PropertyId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -564,6 +813,63 @@ namespace Makanak.Persistance.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Makanak.Domain.Models.BookingEntities.Booking", b =>
+                {
+                    b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "Owner")
+                        .WithMany("IncomingBookings")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Makanak.Domain.Models.PropertyEntities.Property", "Property")
+                        .WithMany("Bookings")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "Tenant")
+                        .WithMany("TenantBookings")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Property");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.DisputeEntities.Dispute", b =>
+                {
+                    b.HasOne("Makanak.Domain.Models.BookingEntities.Booking", "Booking")
+                        .WithMany("Disputes")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "Complaint")
+                        .WithMany("Disputes")
+                        .HasForeignKey("ComplaintId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Complaint");
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.DisputeEntities.DisputeImage", b =>
+                {
+                    b.HasOne("Makanak.Domain.Models.DisputeEntities.Dispute", "Dispute")
+                        .WithMany("DisputeImages")
+                        .HasForeignKey("DisputeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dispute");
+                });
+
             modelBuilder.Entity("Makanak.Domain.Models.NotifyEnities.Notification", b =>
                 {
                     b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "ApplicationUser")
@@ -584,7 +890,7 @@ namespace Makanak.Persistance.Migrations
                         .IsRequired();
 
                     b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "Owner")
-                        .WithMany("Properties")
+                        .WithMany("OwnedProperties")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -603,6 +909,33 @@ namespace Makanak.Persistance.Migrations
                         .IsRequired();
 
                     b.Navigation("Property");
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.ReviewEntities.Review", b =>
+                {
+                    b.HasOne("Makanak.Domain.Models.BookingEntities.Booking", "Booking")
+                        .WithOne("Review")
+                        .HasForeignKey("Makanak.Domain.Models.ReviewEntities.Review", "BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Makanak.Domain.Models.PropertyEntities.Property", "Property")
+                        .WithMany("Reviews")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "Tenant")
+                        .WithMany("Reviews")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Property");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -656,16 +989,40 @@ namespace Makanak.Persistance.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Makanak.Domain.Models.BookingEntities.Booking", b =>
+                {
+                    b.Navigation("Disputes");
+
+                    b.Navigation("Review");
+                });
+
+            modelBuilder.Entity("Makanak.Domain.Models.DisputeEntities.Dispute", b =>
+                {
+                    b.Navigation("DisputeImages");
+                });
+
             modelBuilder.Entity("Makanak.Domain.Models.Identity.ApplicationUser", b =>
                 {
+                    b.Navigation("Disputes");
+
+                    b.Navigation("IncomingBookings");
+
                     b.Navigation("Notifications");
 
-                    b.Navigation("Properties");
+                    b.Navigation("OwnedProperties");
+
+                    b.Navigation("Reviews");
+
+                    b.Navigation("TenantBookings");
                 });
 
             modelBuilder.Entity("Makanak.Domain.Models.PropertyEntities.Property", b =>
                 {
+                    b.Navigation("Bookings");
+
                     b.Navigation("PropertyImages");
+
+                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }

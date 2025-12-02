@@ -16,7 +16,7 @@ namespace Makanak.Persistance.Configurations
             builder.ToTable("Users");
 
             builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
-            builder.Property(e => e.NationalId).HasColumnType("Char(14)");
+            builder.Property(e => e.NationalId).HasColumnType("Char(14)");          
 
             builder.Property(u => u.UserType).HasConversion<string>();
             builder.Property(u => u.UserStatus).HasConversion<string>();

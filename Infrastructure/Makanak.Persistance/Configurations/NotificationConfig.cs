@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Makanak.Persistance.Configurations
 {
-    public class NoftificationConfig : IEntityTypeConfiguration<Notification>
+    public class NotificationConfig : IEntityTypeConfiguration<Notification>
     {
         public void Configure(EntityTypeBuilder<Notification> builder)
         {

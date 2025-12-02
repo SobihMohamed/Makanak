@@ -24,6 +24,7 @@ namespace Makanak.Persistance.Configurations
 
 
             builder.Property(p => p.PricePerNight).HasColumnType("decimal(18,2)");
+            builder.Property(p => p.CommissionPercentage).HasColumnType("decimal(18,2)");
 
             builder.Property(p => p.PropertyType).HasConversion<string>();
 
@@ -32,7 +33,7 @@ namespace Makanak.Persistance.Configurations
                    .HasForeignKey(p => p.GovernorateId)
                    .OnDelete(DeleteBehavior.NoAction);
             builder.HasOne(o=>o.Owner)
-                   .WithMany(p=>p.Properties)
+                   .WithMany(p=>p.OwnedProperties)
                    .HasForeignKey(p => p.OwnerId)
                    .OnDelete(DeleteBehavior.NoAction);
             builder.HasMany(img=>img.PropertyImages)
