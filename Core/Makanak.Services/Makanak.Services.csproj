@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Makanak.Abstraction\Makanak.Abstraction.csproj" />
     <ProjectReference Include="..\Makanak.Domain\Makanak.Domain.csproj" />
   </ItemGroup>

@@ -11,6 +11,7 @@ namespace Makanak.Shared.Dto_s
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;
         public string? ProfilePictureUrl { get; set; }
+        public double AverageRating { get; set; }
         public DateTime JoinAt { get; set; } // CreatedAt of ApplicationUser
     }
 }
