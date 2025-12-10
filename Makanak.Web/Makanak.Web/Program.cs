@@ -1,3 +1,5 @@
+using Makanak.Persistance.Contexts;
+using Makanak.Persistance.ProgramServices;
 
 namespace Makanak.Web
 {
@@ -11,8 +13,10 @@ namespace Makanak.Web
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
 
+            #region DB Connections
+            builder.Services.AddPersistenceServices(builder.Configuration);
+            #endregion
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -23,6 +27,7 @@ namespace Makanak.Web
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
