@@ -15,7 +15,7 @@ namespace Makanak.Abstraction.IServices
 
         Task<CurrentUserDto> GetUserProfileAsync(string email);
         
-        Task<AuthModelDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto , string email);
+        Task<CurrentUserDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto , string email);
         
         Task<string> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto , string email);
         

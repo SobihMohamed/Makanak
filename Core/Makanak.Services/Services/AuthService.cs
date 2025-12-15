@@ -1,4 +1,5 @@
-﻿using Makanak.Abstraction.IServices;
+﻿using AutoMapper;
+using Makanak.Abstraction.IServices;
 using Makanak.Domain.Models.Identity;
 using Makanak.Shared.Dto_s;
 using Makanak.Shared.Dto_s.Authentication;
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Makanak.Services.Services
 {
-    public class AuthService(UserManager<ApplicationUser> userManager , IConfiguration configuration) : IAuthService
+    public class AuthService(UserManager<ApplicationUser> userManager , IAttachementServices attachementServices , IConfiguration configuration , IMapper mapper) : IAuthService
     {
         public async Task<AuthModelDto> LoginAsync(LoginDto loginDto)
         {
@@ -46,12 +47,101 @@ namespace Makanak.Services.Services
                 IsAuthenticated = true,
                 Token = Token.Token,
                 ExpiresOn = Token.ExpiresOn,
-                Roles = roles as List<string> ?? new List<string>()
+                Roles = roles.ToList()
             };
             return AuthModel;
         }
+        public async Task<AuthModelDto> RegisterAsync(RegisterDto registerDto)
+        {
+            var isEmailExist = await userManager.FindByEmailAsync(registerDto.Email);
+            if (isEmailExist != null)
+            {
+                return new AuthModelDto
+                {
+                    Message = "Email is already registered",
+                    IsAuthenticated = false
+                };
+            }
+            // Map RegisterDto to ApplicationUser
+            var mappedUser =  mapper.Map< RegisterDto,ApplicationUser>(registerDto);
 
-        public Task<AuthModelDto> RegisterAsync(RegisterDto registerDto)
+            // create user
+            var result = await userManager.CreateAsync(mappedUser, registerDto.Password);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                return new AuthModelDto
+                {
+                    Message = $"User registration failed: {errors}",
+                    IsAuthenticated = false
+                };
+            }
+            
+            // Assign Role to User
+            var roleResult = await userManager.AddToRoleAsync(mappedUser, registerDto.UserType.ToString());
+            if (!roleResult.Succeeded) 
+            {
+                var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                return new AuthModelDto
+                {
+                    Message = $"Role assignment failed: {errors}",
+                    IsAuthenticated = false
+                };
+            }
+            
+            // Generate JWT Token
+            var token = await GenerateJwtToken(mappedUser);
+            return new AuthModelDto
+            {
+                Message = "User registered successfully",
+                Name = mappedUser.Name!,
+                Email = mappedUser.Email!,
+                IsAuthenticated = true,
+                Token = token.Token,
+                ExpiresOn = token.ExpiresOn,
+                Roles = new List<string> { registerDto.UserType.ToString() }
+            };
+        }
+        public async Task<CurrentUserDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto, string email)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null) 
+            {
+                // Not Found Exception User
+                throw new Exception("User not found");
+            }
+            if (updateProfileDto.ProfilePicture != null)
+            {
+                string imagePath = await attachementServices.UploadImageAsync(updateProfileDto.ProfilePicture , $"{updateProfileDto.Name}_{email}");
+                user.ProfilePictureUrl = imagePath;
+            }
+            mapper.Map(updateProfileDto, user); // assign values and save in user
+            // update the user
+            var result = await userManager.UpdateAsync(user);
+            if (!result.Succeeded) 
+            {
+                var errors = string.Join(", " , result.Errors.Select(e=>e.Description));
+                throw new Exception("Profile Update Faild " + errors);
+            }
+            var currentUserMapper = mapper.Map<ApplicationUser, CurrentUserDto>(user);
+            if (currentUserMapper == null)
+                throw new Exception("Error During Mapping");
+            return currentUserMapper;
+        }
+        public async Task<CurrentUserDto> GetUserProfileAsync(string email)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if(user == null)
+            {
+              // Not Found Exception User
+              throw new Exception("User not found");
+            }
+            var currentUserDto = mapper.Map<ApplicationUser, CurrentUserDto>(user);
+            if(currentUserDto == null)
+               throw new Exception("Mapping failed");
+            return currentUserDto;
+        }
+        public Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
         {
             throw new NotImplementedException();
         }
@@ -59,33 +149,14 @@ namespace Makanak.Services.Services
         {
             throw new NotImplementedException();
         }
-
-        public Task<CurrentUserDto> GetUserProfileAsync(string email)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        public Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<AuthModelDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto, string email)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<string> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email)
         {
             throw new NotImplementedException();
         }
-
         public Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto)
         {
             throw new NotImplementedException();
         }
-
         private async Task<(string Token , DateTime ExpiresOn)> GenerateJwtToken(ApplicationUser user)
         {
             var roles = await userManager.GetRolesAsync(user);
