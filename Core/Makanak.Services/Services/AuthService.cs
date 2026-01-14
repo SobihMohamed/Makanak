@@ -1,23 +1,26 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices;
+using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Models.Identity;
+using Makanak.Domain.Models.ResetPassword;
+using Makanak.Services.Specifications;
 using Makanak.Shared.Dto_s;
 using Makanak.Shared.Dto_s.Authentication;
 using Makanak.Shared.Dto_s.Authentication.Password;
 using Makanak.Shared.Dto_s.User;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
+using Microsoft.IdentityModel.Tokens.Experimental;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Makanak.Services.Services
 {
-    public class AuthService(UserManager<ApplicationUser> userManager , IAttachementServices attachementServices , IConfiguration configuration , IMapper mapper) : IAuthService
+    public class AuthService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager , IAttachementServices attachementServices , IConfiguration configuration , IMapper mapper , IEmailService emailService) 
+        : IAuthService
     {
         public async Task<AuthModelDto> LoginAsync(LoginDto loginDto)
         {
@@ -141,21 +144,132 @@ namespace Makanak.Services.Services
                throw new Exception("Mapping failed");
             return currentUserDto;
         }
-        public Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
+        public async Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
         {
-            throw new NotImplementedException();
+            var user = await userManager.FindByEmailAsync(resetPasswordDto.Email);
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+            var UserOtpRepo = unitOfWork.GetRepo<UserOtp,int>();
+            
+            var Specification = new VerifyUserOtpSpecification(resetPasswordDto.Email, resetPasswordDto.Otp);
+
+            var UserOtp = await UserOtpRepo.GetByIdWithSpecificationsAsync(Specification);
+
+            if (UserOtp == null)
+            {
+                throw new Exception("Invalid Otp");
+            }
+            if (UserOtp.ExpirationTime < DateTime.UtcNow)
+            {
+                throw new Exception("Expired Otp");
+            }
+
+            if(await userManager.HasPasswordAsync(user!))
+            {
+                await userManager.RemovePasswordAsync(user!);
+            }
+            var resetPassResult = await userManager.AddPasswordAsync(user!, resetPasswordDto.NewPassword);
+
+            if (!resetPassResult.Succeeded)
+            {
+                var errors = string.Join(", ", resetPassResult.Errors.Select(e => e.Description));
+                throw new Exception("Password Reset Failed: " + errors);
+            }
+
+            UserOtp.IsUsed = true;
+            UserOtpRepo.Update(UserOtp);
+
+            await unitOfWork.SaveChangesAsync();
+
+            var newToeken = await GenerateJwtToken(user!);
+            return new AuthModelDto
+            {
+                Message = "Password Reset Successful",
+                Name = user!.UserName!,
+                Email = user.Email!,
+                IsAuthenticated = true,
+                Token = newToeken.Token,
+                ExpiresOn = newToeken.ExpiresOn
+            };
+
         }
-        public Task<string> ForgetPasswordAsync(ForgetPasswordRequestDto forgetPasswordRequestDto)
+        public async Task<bool> ForgetPasswordAsync(ForgetPasswordRequestDto forgetPasswordRequestDto)
         {
-            throw new NotImplementedException();
+            // check if exist email 
+            var user = await userManager.FindByEmailAsync(forgetPasswordRequestDto.Email);
+            if (user == null)
+            {
+                // Throw New UserNotFoundException
+                throw new Exception("User not found");
+            }
+            // get the specification 
+            var Specification = new UserOtpSpecification(user.Email!);
+
+            // get Repo 
+            var userOtpRepo = unitOfWork.GetRepo<UserOtp,int>();
+
+            // get the user old otp by specification
+            var oldUserOtp = await userOtpRepo.GetAllWithSpecificationAsync(Specification);
+
+            // if exist update to used
+            foreach (var otp in oldUserOtp)
+            {
+                otp.IsUsed = true;
+                userOtpRepo.Update(otp);
+            }
+
+
+            // generate new otp
+            var newOtp = new Random().Next(100000, 999999).ToString();
+
+            // save it to db with expire time 5 minutes\
+            var userOtp = new UserOtp
+            {
+                Email = user.Email!,
+                OtpCode = newOtp,
+                ExpirationTime = DateTime.UtcNow.AddMinutes(5),
+                IsUsed = false,
+                UserId = user.Id
+            };
+
+            userOtpRepo.AddAsync(userOtp);
+            await unitOfWork.SaveChangesAsync();
+
+            // send the otp to user email
+            await emailService.SendEmailAsync(user.Email!, "Password Reset OTP", $"Your OTP code is: {newOtp}");
+
+            return true;
+
+
         }
         public Task<string> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email)
         {
             throw new NotImplementedException();
         }
-        public Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto)
+        public async Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto)
         {
-            throw new NotImplementedException();
+            var email = verifyOtpDto.Email;
+            var otp = verifyOtpDto.Otp;
+
+            var userOtpRepo = unitOfWork.GetRepo<UserOtp,int>();
+
+            var specification = new VerifyUserOtpSpecification(email, otp);
+
+            var existOtp = await userOtpRepo.GetByIdWithSpecificationsAsync(specification);
+
+            if (existOtp == null) 
+            {
+                throw new Exception("Invalid Otp");
+            }
+            if (existOtp.ExpirationTime < DateTime.UtcNow)
+            {
+                throw new Exception("Expired Otp");
+            }
+
+            return true;
+
         }
         private async Task<(string Token , DateTime ExpiresOn)> GenerateJwtToken(ApplicationUser user)
         {

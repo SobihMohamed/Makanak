@@ -1,9 +1,9 @@
 using Makanak.Abstraction.IServices;
 using Makanak.Persistance.ProgramServices;
+using Makanak.Services.AutoMapper;
 using Makanak.Services.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Security;
 using System.Text;
 
 namespace Makanak.Web
@@ -18,6 +18,7 @@ namespace Makanak.Web
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            builder.Services.AddAutoMapper(m => m.AddProfile(new UserProfile()));
 
             #region DB Connections
             builder.Services.AddPersistenceServices(builder.Configuration);
@@ -41,17 +42,19 @@ namespace Makanak.Web
                 {
                     ValidateIssuer = true,
                     ValidIssuer = builder.Configuration["JWTOptions:Issuer"],
-                    
+
                     ValidateAudience = true,
                     ValidAudience = builder.Configuration["JWTOptions:Audience"],
-                    
+
                     ValidateLifetime = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWTOptions:SecurityKey"]))
-                
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWTOptions:SecurityKey"])),
+
+
                     ClockSkew = TimeSpan.Zero // to avoid delay in token expiration time
                 };
             });
             #endregion
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

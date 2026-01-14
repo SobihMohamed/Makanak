@@ -11,9 +11,9 @@ using System.Text;
 
 namespace Makanak.Services.AutoMapper
 {
-    public class ProjectProfile : Profile
+    public class UserProfile : Profile
     {
-        public ProjectProfile()
+        public UserProfile()
         {
             CreateMap<RegisterDto, ApplicationUser>()
                 .ForMember(Dest => Dest.UserName , options => options.MapFrom(src => src.Email))
@@ -21,6 +21,7 @@ namespace Makanak.Services.AutoMapper
                 .ForMember(Dest => Dest.CreatedAt , options => options.MapFrom(src => DateTime.UtcNow));
 
             CreateMap<ApplicationUser, CurrentUserDto>()
+                .ForMember(Dest => Dest.ProfilePictureUrl , options => options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>, string>(src => src.ProfilePictureUrl))
                 .ForMember(Dest => Dest.UserType, options => options.MapFrom(src => src.UserType.ToString()))
                 .ForMember(Dest => Dest.UserStatus, options => options.MapFrom(src => src.UserStatus.ToString()))
                 .ForMember(Dest => Dest.JoinAt, options => options.MapFrom(src => src.CreatedAt))

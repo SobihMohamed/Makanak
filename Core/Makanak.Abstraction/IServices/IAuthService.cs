@@ -19,7 +19,7 @@ namespace Makanak.Abstraction.IServices
         
         Task<string> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto , string email);
         
-        Task<string> ForgetPasswordAsync(ForgetPasswordRequestDto forgetPasswordRequestDto);
+        Task<bool> ForgetPasswordAsync(ForgetPasswordRequestDto forgetPasswordRequestDto);
         Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto);
         Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
 

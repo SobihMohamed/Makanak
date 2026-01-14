@@ -6,9 +6,9 @@ using System.Text;
 
 namespace Makanak.Services.AutoMapper.Resolver
 {
-    public class UrlResolver(IConfiguration configuration) : IMemberValueResolver<object, object,string , string>
+    public class UrlResolver<TSource , TDestination>(IConfiguration configuration) : IMemberValueResolver<TSource, TDestination, string , string>
     {
-        public string? Resolve(object source, object destination, string sourceMember, string destMember, ResolutionContext context)
+        public string? Resolve(TSource source, TDestination destination, string sourceMember, string destMember, ResolutionContext context)
         {
             if (string.IsNullOrEmpty(sourceMember))
             {

@@ -6,7 +6,7 @@ namespace Makanak.Services.Services
 {
     public class AttachementServices : IAttachementServices
     {
-        private readonly List<string> AllowedExtentions = new List<string>() { ".jpg", ".png", "jpeg" };
+        private readonly List<string> AllowedExtentions = new List<string>() { ".jpg", ".png", ".jpeg" };
         private const long _fileSizeLimit = 1 * 1024 * 1024; // 1 MB
 
         public async Task<string> UploadImageAsync(IFormFile? formFile, string folderName) // folder name is nameofuser_email
