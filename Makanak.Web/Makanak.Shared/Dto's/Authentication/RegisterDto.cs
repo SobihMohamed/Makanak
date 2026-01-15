@@ -19,6 +19,8 @@ namespace Makanak.Shared.Dto_s
         [Required,Phone]
         public string PhoneNumber { get; set; } = null!;
         [Required]
+        public DateTime DateOfBirth { get; set; } // => to calculate the age
+        [Required]
         public UserTypes UserType { get; set; }
     }
 }
