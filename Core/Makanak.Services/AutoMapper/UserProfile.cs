@@ -22,6 +22,8 @@ namespace Makanak.Services.AutoMapper
 
             CreateMap<ApplicationUser, CurrentUserDto>()
                 .ForMember(Dest => Dest.ProfilePictureUrl , options => options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>, string>(src => src.ProfilePictureUrl))
+                .ForMember(Dest => Dest.NationalIdImageFrontUrl , options=>options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>,string> (src => src.NationalIdImageFrontUrl))
+                .ForMember(Dest => Dest.NationalIdImageBackUrl , options=>options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>,string> (src => src.NationalIdImageBackUrl))
                 .ForMember(Dest => Dest.UserType, options => options.MapFrom(src => src.UserType.ToString()))
                 .ForMember(Dest => Dest.UserStatus, options => options.MapFrom(src => src.UserStatus.ToString()))
                 .ForMember(Dest => Dest.JoinAt, options => options.MapFrom(src => src.CreatedAt))

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Makanak.Services.Specifications
+namespace Makanak.Services.Specifications.User
 {
     public class UserOtpSpecification : BaseSpecifications<UserOtp, int>
     {

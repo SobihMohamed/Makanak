@@ -1,4 +1,6 @@
 using Makanak.Abstraction.IServices;
+using Makanak.Domain.Contracts.Repos;
+using Makanak.Persistance.Implements.ReposImplement;
 using Makanak.Persistance.ProgramServices;
 using Makanak.Services.AutoMapper;
 using Makanak.Services.Services;
@@ -27,6 +29,7 @@ namespace Makanak.Web
             #region Dependency Injections
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAttachementServices, AttachementServices>();
+            builder.Services.AddScoped<IUserRepository, UserRepo>();
             #endregion
 
             #region JWT Configuration

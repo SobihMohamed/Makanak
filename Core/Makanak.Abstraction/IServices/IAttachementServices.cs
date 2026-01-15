@@ -8,6 +8,6 @@ namespace Makanak.Abstraction.IServices
     public interface IAttachementServices
     {
         Task<string> UploadImageAsync(IFormFile? formFile , string folderName);
-        public bool DeleteImage(string filePath);
+        public Task<bool> DeleteImage(string filePath);
     }
 }

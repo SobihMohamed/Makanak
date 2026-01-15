@@ -7,9 +7,9 @@ namespace Makanak.Services.Services
     public class AttachementServices : IAttachementServices
     {
         private readonly List<string> AllowedExtentions = new List<string>() { ".jpg", ".png", ".jpeg" };
-        private const long _fileSizeLimit = 1 * 1024 * 1024; // 1 MB
+        private const long _fileSizeLimit = 2 * 1024 * 1024; // 2 MB
 
-        public async Task<string> UploadImageAsync(IFormFile? formFile, string folderName) // folder name is nameofuser_email
+        public async Task<string> UploadImageAsync(IFormFile? formFile, string folderName) // folder name is userId
         {
             if(formFile == null)
             {
@@ -31,7 +31,7 @@ namespace Makanak.Services.Services
                 Directory.CreateDirectory(folderPath);
 
             // 5 - create unique file name
-            var uniqueFileName = $"ProfileImage_{formFile.FileName}_{Guid.NewGuid()}{fileExtention}";
+            var uniqueFileName = $"{Path.GetFileNameWithoutExtension(formFile.FileName)}_{Guid.NewGuid()}{fileExtention}";
 
 
             // 6 - create Full Path 
@@ -45,7 +45,7 @@ namespace Makanak.Services.Services
 
             return Path.Combine("uploads","Attachement",folderName,uniqueFileName).Replace("\\", "/");
         }
-        public bool DeleteImage(string filePath)
+        public async Task<bool> DeleteImage(string filePath)
         {
             if (filePath != null) 
             {

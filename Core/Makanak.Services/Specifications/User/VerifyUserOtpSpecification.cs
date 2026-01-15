@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Makanak.Services.Specifications
+namespace Makanak.Services.Specifications.User
 {
     public class VerifyUserOtpSpecification : BaseSpecifications<UserOtp,int>
     {

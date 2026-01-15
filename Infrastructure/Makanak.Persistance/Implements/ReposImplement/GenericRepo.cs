@@ -23,7 +23,7 @@ namespace Makanak.Persistance.Implements.ReposImplement
         public void Update(TEntity entity) => _context.Set<TEntity>().Update(entity);
         public void Delete(TEntity entity) => _context.Set<TEntity>().Remove(entity);
 
-        public async Task<IEnumerable<TEntity>> GetAllWithSpecification(ISpecifications<TEntity, Key> specifications)
+        public async Task<IEnumerable<TEntity>> GetAllWithSpecificationAsync(ISpecifications<TEntity, Key> specifications)
         {
             var BaseQuery = _context.Set<TEntity>();
             
@@ -43,5 +43,7 @@ namespace Makanak.Persistance.Implements.ReposImplement
         }
 
         public void DeleteRangeAsync(IEnumerable<TEntity> entities) => _context.Set<TEntity>().RemoveRange(entities);
+
+
     }
 }

@@ -1,25 +1,27 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices;
+using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
+using Makanak.Domain.EnumsHelper.User;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.ResetPassword;
-using Makanak.Services.Specifications;
+using Makanak.Services.Specifications.User;
 using Makanak.Shared.Dto_s;
 using Makanak.Shared.Dto_s.Authentication;
 using Makanak.Shared.Dto_s.Authentication.Password;
 using Makanak.Shared.Dto_s.User;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Tokens.Experimental;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
 namespace Makanak.Services.Services
 {
-    public class AuthService(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager , IAttachementServices attachementServices , IConfiguration configuration , IMapper mapper , IEmailService emailService) 
+    public class AuthService(IUnitOfWork unitOfWork, IUserRepository userRepository , UserManager<ApplicationUser> userManager ,
+        IAttachementServices attachementServices , IConfiguration configuration ,
+        IMapper mapper , IEmailService emailService) 
         : IAuthService
     {
         public async Task<AuthModelDto> LoginAsync(LoginDto loginDto)
@@ -72,6 +74,8 @@ namespace Makanak.Services.Services
             var result = await userManager.CreateAsync(mappedUser, registerDto.Password);
             if (!result.Succeeded)
             {
+                await userManager.DeleteAsync(mappedUser);
+
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 return new AuthModelDto
                 {
@@ -115,7 +119,11 @@ namespace Makanak.Services.Services
             }
             if (updateProfileDto.ProfilePicture != null)
             {
-                string imagePath = await attachementServices.UploadImageAsync(updateProfileDto.ProfilePicture , $"{updateProfileDto.Name}_{email}");
+                if (!string.IsNullOrEmpty(user.ProfilePictureUrl))
+                {
+                  await attachementServices.DeleteImage(user.ProfilePictureUrl);
+                }
+                string imagePath = await attachementServices.UploadImageAsync(updateProfileDto.ProfilePicture , $"{user.Id}");
                 user.ProfilePictureUrl = imagePath;
             }
             mapper.Map(updateProfileDto, user); // assign values and save in user
@@ -244,9 +252,41 @@ namespace Makanak.Services.Services
 
 
         }
-        public Task<string> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email)
+        public async Task<bool> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email)
         {
-            throw new NotImplementedException();
+            // get user 
+            var user  = await userManager.FindByEmailAsync(email);
+            if (user == null) throw new Exception("User not found");
+
+            // check status
+            if (user.UserStatus == UserStatus.Pending || user.UserStatus == UserStatus.Active)
+            {
+                throw new Exception("You cannot update your identity while it is pending or Active.");
+            }
+
+            // check if national id is already used
+            var isDublicated = await userRepository.IsUserNationalIdExistAsync(verifyIdentityDto.NationalId! , user.Id);
+            if (isDublicated) throw new Exception("National ID is already in use by another user.");
+
+            // upload front & back image
+            string frontImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageFrontUrl!, $"{user.Id}");
+            string backImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageBackUrl!, $"{user.Id}");
+
+            // update user info
+            user.NationalId = verifyIdentityDto.NationalId;
+            user.NationalIdImageFrontUrl = frontImagePath;
+            user.NationalIdImageBackUrl = backImagePath;
+            user.UserStatus = UserStatus.Pending;
+
+            var result = await userManager.UpdateAsync(user);
+
+            if(!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception("Identity Verification Failed: " + errors);
+            }
+
+            return true;
         }
         public async Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto)
         {
@@ -296,7 +336,7 @@ namespace Makanak.Services.Services
             var SigningCredentials = new SigningCredentials(Key, SecurityAlgorithms.HmacSha256);
 
             // expire time for the token
-            var expireTime = DateTime.Now.AddHours(12);
+            var expireTime = DateTime.UtcNow.AddHours(12);
             // Create the token
             var Token = new JwtSecurityToken(
                 issuer: configuration.GetSection("JWTOptions:Issuer").Value,
