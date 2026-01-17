@@ -1,9 +1,12 @@
 using Makanak.Abstraction.IServices;
+using Makanak.Abstraction.IServices.Auth;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Persistance.Implements.ReposImplement;
 using Makanak.Persistance.ProgramServices;
 using Makanak.Services.AutoMapper;
 using Makanak.Services.Services;
+using Makanak.Services.Services.Auth;
+using Makanak.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;

@@ -11,24 +11,24 @@ namespace Makanak.Services.Services
 {
     public class EmailServices : IEmailService
     {
-        private readonly MailSettings _emailService;
+        private readonly MailSettings _emailSettings;
         public EmailServices(IConfiguration configuration) 
         {
-            _emailService = configuration.GetSection("EmailService").Get<MailSettings>();
+            _emailSettings = configuration.GetSection("MailSettings").Get<MailSettings>();
         }
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             // 1. Configure Smtp Client
-            var client = new SmtpClient(_emailService.Host, _emailService.Port)
+            var client = new SmtpClient(_emailSettings.Host, _emailSettings.Port)
             {
-                Credentials = new NetworkCredential(_emailService.Mail, _emailService.Password),
+                Credentials = new NetworkCredential(_emailSettings.Email, _emailSettings.Password),
                 EnableSsl = true
             };
 
             // 2 . Create Mail Message
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(_emailService.Mail, _emailService.DisplayName),
+                From = new MailAddress(_emailSettings.Email, _emailSettings.DisplayName),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true 

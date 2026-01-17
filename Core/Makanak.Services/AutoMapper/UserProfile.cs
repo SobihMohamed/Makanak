@@ -17,7 +17,7 @@ namespace Makanak.Services.AutoMapper
         {
             CreateMap<RegisterDto, ApplicationUser>()
                 .ForMember(Dest => Dest.UserName , options => options.MapFrom(src => src.Email))
-                .ForMember(Dest => Dest.UserStatus , options => options.MapFrom(src => UserStatus.Pending.ToString()))
+                .ForMember(Dest => Dest.UserStatus , options => options.MapFrom(src => UserStatus.New.ToString()))
                 .ForMember(Dest => Dest.CreatedAt , options => options.MapFrom(src => DateTime.UtcNow));
 
             CreateMap<ApplicationUser, CurrentUserDto>()

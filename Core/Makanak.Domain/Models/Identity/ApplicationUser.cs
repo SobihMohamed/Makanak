@@ -1,4 +1,5 @@
-﻿using Makanak.Domain.EnumsHelper.User;
+﻿using Makanak.Domain.Contracts;
+using Makanak.Domain.EnumsHelper.User;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.DisputeEntities;
 using Makanak.Domain.Models.NotifyEnities;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Makanak.Domain.Models.Identity
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser : IdentityUser , IEntity<string>
     {
         #region Personal Info
         public string Name { get; set; } = null!;
