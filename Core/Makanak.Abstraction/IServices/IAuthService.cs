@@ -12,7 +12,7 @@ namespace Makanak.Abstraction.IServices
     {
         Task<AuthModelDto> LoginAsync(LoginDto loginDto);
         Task<AuthModelDto> RegisterAsync(RegisterDto registerDto);
-
+        Task<bool> Logout(string email);
         Task<CurrentUserDto> GetUserProfileAsync(string email);
         
         Task<CurrentUserDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto , string email);

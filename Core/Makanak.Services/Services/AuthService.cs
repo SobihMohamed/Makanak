@@ -3,6 +3,8 @@ using Makanak.Abstraction.IServices;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.EnumsHelper.User;
+using Makanak.Domain.Exceptions;
+using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.ResetPassword;
 using Makanak.Services.Specifications.User;
@@ -31,13 +33,13 @@ namespace Makanak.Services.Services
             if (User == null)
             {
                 //Throw New UserNotFoundException 
-                throw new Exception("User not found");
+                throw new UserNotFoundException(loginDto.Email);
             }
             var isPasswordValid = await userManager.CheckPasswordAsync(User!, loginDto.Password);
             if (!isPasswordValid)
             {
                 //Throw New UnAuthorizedException
-                throw new Exception("Invalid Password");
+                throw new UnauthorizedException();
             }
             //Generate JWT Token
             var Token = await GenerateJwtToken(User!);
@@ -61,11 +63,7 @@ namespace Makanak.Services.Services
             var isEmailExist = await userManager.FindByEmailAsync(registerDto.Email);
             if (isEmailExist != null)
             {
-                return new AuthModelDto
-                {
-                    Message = "Email is already registered",
-                    IsAuthenticated = false
-                };
+                throw new BadRequestException("Email is already in use");
             }
             // Map RegisterDto to ApplicationUser
             var mappedUser =  mapper.Map< RegisterDto,ApplicationUser>(registerDto);
@@ -74,26 +72,19 @@ namespace Makanak.Services.Services
             var result = await userManager.CreateAsync(mappedUser, registerDto.Password);
             if (!result.Succeeded)
             {
-                await userManager.DeleteAsync(mappedUser);
-
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                return new AuthModelDto
-                {
-                    Message = $"User registration failed: {errors}",
-                    IsAuthenticated = false
-                };
+                var errors = result.Errors.Select(e => e.Description);
+                throw new BadRequestException("User Registration Failed", errors);
             }
             
             // Assign Role to User
             var roleResult = await userManager.AddToRoleAsync(mappedUser, registerDto.UserType.ToString());
             if (!roleResult.Succeeded) 
             {
-                var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
-                return new AuthModelDto
-                {
-                    Message = $"Role assignment failed: {errors}",
-                    IsAuthenticated = false
-                };
+                // delete user 
+                await userManager.DeleteAsync(mappedUser);
+
+                var errors = result.Errors.Select(e => e.Description);
+                throw new BadRequestException("Assign Role Failed", errors);
             }
             
             // Generate JWT Token
@@ -115,7 +106,7 @@ namespace Makanak.Services.Services
             if (user == null) 
             {
                 // Not Found Exception User
-                throw new Exception("User not found");
+                throw new UserNotFoundException(email);
             }
             if (updateProfileDto.ProfilePicture != null)
             {
@@ -131,12 +122,14 @@ namespace Makanak.Services.Services
             var result = await userManager.UpdateAsync(user);
             if (!result.Succeeded) 
             {
-                var errors = string.Join(", " , result.Errors.Select(e=>e.Description));
-                throw new Exception("Profile Update Faild " + errors);
+                var errors = result.Errors.Select(e => e.Description);
+                throw new BadRequestException("Profile Update Failed", errors);
             }
+
             var currentUserMapper = mapper.Map<ApplicationUser, CurrentUserDto>(user);
             if (currentUserMapper == null)
                 throw new Exception("Error During Mapping");
+
             return currentUserMapper;
         }
         public async Task<CurrentUserDto> GetUserProfileAsync(string email)
@@ -145,7 +138,7 @@ namespace Makanak.Services.Services
             if(user == null)
             {
               // Not Found Exception User
-              throw new Exception("User not found");
+              throw new UserNotFoundException(email);
             }
             var currentUserDto = mapper.Map<ApplicationUser, CurrentUserDto>(user);
             if(currentUserDto == null)
@@ -157,7 +150,7 @@ namespace Makanak.Services.Services
             var user = await userManager.FindByEmailAsync(resetPasswordDto.Email);
             if (user == null)
             {
-                throw new Exception("User not found");
+                throw new UserNotFoundException(resetPasswordDto.Email);
             }
             var UserOtpRepo = unitOfWork.GetRepo<UserOtp,int>();
             
@@ -167,11 +160,11 @@ namespace Makanak.Services.Services
 
             if (UserOtp == null)
             {
-                throw new Exception("Invalid Otp");
+                throw new BadRequestException("Invalid OTP");
             }
             if (UserOtp.ExpirationTime < DateTime.UtcNow)
             {
-                throw new Exception("Expired Otp");
+                throw new BadRequestException("Expired OTP");
             }
 
             if(await userManager.HasPasswordAsync(user!))
@@ -182,8 +175,8 @@ namespace Makanak.Services.Services
 
             if (!resetPassResult.Succeeded)
             {
-                var errors = string.Join(", ", resetPassResult.Errors.Select(e => e.Description));
-                throw new Exception("Password Reset Failed: " + errors);
+                var errors = resetPassResult.Errors.Select(e => e.Description);
+                throw new BadRequestException("Password Reset Failed", errors);
             }
 
             UserOtp.IsUsed = true;
@@ -210,7 +203,7 @@ namespace Makanak.Services.Services
             if (user == null)
             {
                 // Throw New UserNotFoundException
-                throw new Exception("User not found");
+                throw new UserNotFoundException(forgetPasswordRequestDto.Email);
             }
             // get the specification 
             var Specification = new UserOtpSpecification(user.Email!);
@@ -256,17 +249,15 @@ namespace Makanak.Services.Services
         {
             // get user 
             var user  = await userManager.FindByEmailAsync(email);
-            if (user == null) throw new Exception("User not found");
+            if (user == null) throw new UserNotFoundException(email);
 
             // check status
             if (user.UserStatus == UserStatus.Pending || user.UserStatus == UserStatus.Active)
-            {
-                throw new Exception("You cannot update your identity while it is pending or Active.");
-            }
+                throw new BadRequestException("You cannot update your identity while it is pending or Active.");
 
             // check if national id is already used
             var isDublicated = await userRepository.IsUserNationalIdExistAsync(verifyIdentityDto.NationalId! , user.Id);
-            if (isDublicated) throw new Exception("National ID is already in use by another user.");
+            if (isDublicated) throw new BadRequestException("National ID is already in use by another user.");
 
             // upload front & back image
             string frontImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageFrontUrl!, $"{user.Id}");
@@ -282,8 +273,8 @@ namespace Makanak.Services.Services
 
             if(!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new Exception("Identity Verification Failed: " + errors);
+                var errors = result.Errors.Select(e => e.Description);
+                throw new BadRequestException("Identity Verification Failed: " , errors);
             }
 
             return true;
@@ -301,15 +292,26 @@ namespace Makanak.Services.Services
 
             if (existOtp == null) 
             {
-                throw new Exception("Invalid Otp");
+                throw new BadRequestException("Invalid Otp");
             }
             if (existOtp.ExpirationTime < DateTime.UtcNow)
             {
-                throw new Exception("Expired Otp");
+                throw new BadRequestException("Expired Otp");
             }
 
             return true;
 
+        }
+        public async Task<bool> Logout(string email)
+        {
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                throw new UserNotFoundException(email);
+            }
+            // For JWT, logout is typically handled on the client side by deleting the token.
+            // Optionally, you can implement token blacklisting here if needed.
+            return true;
         }
         private async Task<(string Token , DateTime ExpiresOn)> GenerateJwtToken(ApplicationUser user)
         {

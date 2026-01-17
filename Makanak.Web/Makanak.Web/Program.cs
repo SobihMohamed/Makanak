@@ -1,25 +1,40 @@
 using Makanak.Abstraction.IServices;
 using Makanak.Domain.Contracts.Repos;
+using Makanak.Domain.Contracts.UOW;
+using Makanak.Persistance.Extensions;
 using Makanak.Persistance.Implements.ReposImplement;
+using Makanak.Persistance.Implements.UOW;
 using Makanak.Persistance.ProgramServices;
+using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper;
+using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Services.Services;
+using Makanak.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace Makanak.Web
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                // ????? ?? ?? ???? ????? ??? Enum ???? ?? ???? (Tenant) ?? ????? (1)
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            }); ;
+
+            // swagger documentation 
+            builder.Services.AddSwaggerDocumentation();
+
+            // auto mapper configuration
             builder.Services.AddAutoMapper(m => m.AddProfile(new UserProfile()));
 
             #region DB Connections
@@ -30,6 +45,11 @@ namespace Makanak.Web
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAttachementServices, AttachementServices>();
             builder.Services.AddScoped<IUserRepository, UserRepo>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IEmailService, EmailServices>();
+
+            // ??? ????? ?? ???? AutoMapper ???? ???? ??? UrlResolver
+            builder.Services.AddTransient(typeof(UrlResolver<,>));
             #endregion
 
             #region JWT Configuration
@@ -58,20 +78,29 @@ namespace Makanak.Web
             });
             #endregion
 
+
             var app = builder.Build();
+
+            #region Data Seeding Configuration
+            await app.SeedDatabaseAsync();
+            #endregion
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                app.UseSwaggerDocumentation();
             }
+            app.UseMiddleware<GlobalErrorHandlerMiddleware>();
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+
+            app.UseRouting();
 
             app.UseAuthentication();
+
             app.UseAuthorization();
 
+            app.UseStaticFiles();
 
             app.MapControllers();
 
