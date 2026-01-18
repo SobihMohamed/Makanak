@@ -6,14 +6,14 @@ using System.Text;
 
 namespace Makanak.Services.Specifications.User
 {
-    public class UserOtpSpecification : BaseSpecifications<UserOtp, int>
+    public class UserOtpSpecifications : BaseSpecifications<UserOtp, int>
     {
-        public UserOtpSpecification(string email) :
+        public UserOtpSpecifications(string email) :
             base(U_Otp => U_Otp.Email == email && U_Otp.IsUsed == false)
         {
         }
 
-        public UserOtpSpecification(string email, string otpCode)
+        public UserOtpSpecifications(string email, string otpCode)
         : base(U_Otp => U_Otp.Email == email && U_Otp.OtpCode == otpCode && U_Otp.IsUsed == false)
         {
         }

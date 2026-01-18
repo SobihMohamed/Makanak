@@ -22,7 +22,7 @@ using System.Text;
 
 namespace Makanak.Services.Services.Auth
 {
-    public class AuthService(IUnitOfWork unitOfWork, IUserRepository userRepository, UserManager<ApplicationUser> userManager,
+    public class AuthService(IUnitOfWork unitOfWork,UserManager<ApplicationUser> userManager,
         IAttachementServices attachementServices, IConfiguration configuration,
         IMapper mapper, IEmailService emailService)
         : IAuthService
@@ -266,9 +266,15 @@ namespace Makanak.Services.Services.Auth
             if (user.UserStatus == UserStatus.Pending || user.UserStatus == UserStatus.Active)
                 throw new BadRequestException("You cannot update your identity while it is pending or Active.");
 
+            // get user repository
+            var userRepository = unitOfWork.GetRepo<ApplicationUser, string>();
+
+            // generate specification to check national id
+            var userSpecification = new UserSpecifications(verifyIdentityDto.NationalId! , user.Id);
+
             // check if national id is already used
-            var isDublicated = await userRepository.IsUserNationalIdExistAsync(verifyIdentityDto.NationalId!, user.Id);
-            if (isDublicated) throw new BadRequestException("National ID is already in use by another user.");
+            var isDuplicated = await userRepository.GetByIdWithSpecificationsAsync(userSpecification);
+            if (isDuplicated != null) throw new BadRequestException("National ID is already in use by another user.");
 
             // upload front & back image
             string frontImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageFrontUrl!, $"{user.Id}");
@@ -351,7 +357,7 @@ namespace Makanak.Services.Services.Auth
         private async Task<string> GenerateAndSaveOtpAsync(string UserId, string email)
         {
             // get the specification 
-            var Specification = new UserOtpSpecification(email);
+            var Specification = new UserOtpSpecifications(email);
 
             // get Repo 
             var userOtpRepo = unitOfWork.GetRepo<UserOtp, int>();
@@ -392,7 +398,7 @@ namespace Makanak.Services.Services.Auth
 
             var userOtpRepo = unitOfWork.GetRepo<UserOtp, int>();
 
-            var specification = new UserOtpSpecification(email, otp);
+            var specification = new UserOtpSpecifications(email, otp);
 
             var existOtp = await userOtpRepo.GetByIdWithSpecificationsAsync(specification);
 

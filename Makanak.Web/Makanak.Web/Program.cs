@@ -46,7 +46,6 @@ namespace Makanak.Web
             #region Dependency Injections
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAttachementServices, AttachementServices>();
-            builder.Services.AddScoped<IUserRepository, UserRepo>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IEmailService, EmailServices>();
 
