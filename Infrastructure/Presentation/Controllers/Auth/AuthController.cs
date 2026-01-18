@@ -1,4 +1,4 @@
-﻿using Makanak.Abstraction.IServices;
+﻿using Makanak.Abstraction.IServices.Auth;
 using Makanak.Shared.Dto_s;
 using Makanak.Shared.Dto_s.Authentication;
 using Makanak.Shared.Dto_s.Authentication.Password;
@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Makanak.Presentation.Controllers.Auth
 {
-    public class AuthController (IAuthService authService) : AppBaseController
+    public class AuthController(IAuthService authService) : AppBaseController
     {
         [HttpPost("login")]  // POST: api/auth/login
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
@@ -39,7 +39,7 @@ namespace Makanak.Presentation.Controllers.Auth
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDto updateProfileDto)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value; // get email from token
-            var result = await authService.UpdateProfileAsync(updateProfileDto,email!);
+            var result = await authService.UpdateProfileAsync(updateProfileDto, email!);
             return Success(result, "User Profile Updated Successfully");
         }
 
@@ -61,7 +61,7 @@ namespace Makanak.Presentation.Controllers.Auth
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
         {
             var res = await authService.ResetPasswordAsync(resetPasswordDto);
-            return Success(res , "Password has been reset successfully.");
+            return Success(res, "Password has been reset successfully.");
         }
 
         [Authorize]
@@ -70,7 +70,27 @@ namespace Makanak.Presentation.Controllers.Auth
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value; // get email from token
             await authService.VerifyIdentityAsync(verifyIdentityDto, email!);
-            return Success("Identity verified successfully.");
+            return Success("Documents uploaded successfully. Your account is pending admin approval.");
+        }
+
+        [Authorize]
+        [HttpPost("initiate-email-change")]
+        public async Task<IActionResult> InitiateEmailChange([FromBody] ChangeEmailDto changeEmailDto)
+        {
+            var currentEmail = User.FindFirst(ClaimTypes.Email)?.Value; // get email from token
+
+            var result = await authService.InitiateEmailChangeAsync(changeEmailDto, currentEmail!);
+
+            return Success(result, "Email change initiated. Please verify using the link sent to your new email.");
+        }
+
+        [Authorize]
+        [HttpPost("confirm-email-change")]
+        public async Task<IActionResult> ConfirmEmailChange([FromBody] VerifyOtpDto verifyOtpDto)
+        {
+            await authService.ConfirmEmailChangeAsync(verifyOtpDto);
+
+            return Success("Email address updated successfully.");
         }
 
         [HttpPost("logout")]

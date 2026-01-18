@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace Makanak.Domain.Contracts.Repos
 {
-    public interface IGenericRepo<TEntity, Key> where TEntity : BaseEntity<Key>
+    public interface IGenericRepo<TEntity, TKey> where TEntity : class, IEntity<TKey>
     {
         public Task<IEnumerable<TEntity>> GetAllAsync();
-        public Task<IEnumerable<TEntity>> GetAllWithSpecificationAsync(ISpecifications<TEntity, Key> specifications);
-        public Task<TEntity> GetByIdAsync(Key id);
-        public Task<TEntity> GetByIdWithSpecificationsAsync(ISpecifications<TEntity, Key> specifications);
+        public Task<IEnumerable<TEntity>> GetAllWithSpecificationAsync(ISpecifications<TEntity, TKey> specifications);
+        public Task<TEntity> GetByIdAsync(TKey id);
+        public Task<TEntity> GetByIdWithSpecificationsAsync(ISpecifications<TEntity, TKey> specifications);
         public void AddAsync(TEntity entity);
         public void Update(TEntity entity);
 

@@ -1,4 +1,5 @@
-﻿using Makanak.Domain.Contracts.Repos;
+﻿using Makanak.Domain.Contracts;
+using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Models;
 using Makanak.Persistance.Contexts;
@@ -14,7 +15,7 @@ namespace Makanak.Persistance.Implements.UOW
     public class UnitOfWork(MakanakDbContext _context) : IUnitOfWork
     {
         private readonly Dictionary<string, object> _repos = [];
-        public IGenericRepo<TEntity, Key> GetRepo<TEntity, Key>() where TEntity : BaseEntity<Key>
+        public IGenericRepo<TEntity, Key> GetRepo<TEntity, Key>() where TEntity : class , IEntity<Key>
         {
             var RepoType = typeof(TEntity).Name;
             if (_repos.ContainsKey(RepoType))

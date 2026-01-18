@@ -1,4 +1,5 @@
-﻿using Makanak.Domain.Contracts.Repos;
+﻿using Makanak.Domain.Contracts;
+using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.Specifications;
 using Makanak.Domain.Models;
 using Makanak.Persistance.Contexts;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 namespace Makanak.Persistance.Implements.ReposImplement
 {
     public class GenericRepo<TEntity, Key>(MakanakDbContext _context)
-        : IGenericRepo<TEntity, Key> where TEntity : BaseEntity<Key>
+        : IGenericRepo<TEntity, Key> where TEntity : class, IEntity<Key>
     {
 
         public async Task<IEnumerable<TEntity>> GetAllAsync() => await _context.Set<TEntity>().ToListAsync();

@@ -16,14 +16,14 @@ namespace Makanak.Services.AutoMapper
         public UserProfile()
         {
             CreateMap<RegisterDto, ApplicationUser>()
-                .ForMember(Dest => Dest.UserName , options => options.MapFrom(src => src.Email))
-                .ForMember(Dest => Dest.UserStatus , options => options.MapFrom(src => UserStatus.Pending.ToString()))
-                .ForMember(Dest => Dest.CreatedAt , options => options.MapFrom(src => DateTime.UtcNow));
+                .ForMember(Dest => Dest.UserName, options => options.MapFrom(src => src.Email))
+                .ForMember(Dest => Dest.UserStatus, options => options.MapFrom(src => UserStatus.New.ToString()))
+                .ForMember(Dest => Dest.CreatedAt, options => options.MapFrom(src => DateTime.UtcNow));
 
             CreateMap<ApplicationUser, CurrentUserDto>()
-                .ForMember(Dest => Dest.ProfilePictureUrl , options => options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>, string>(src => src.ProfilePictureUrl))
-                .ForMember(Dest => Dest.NationalIdImageFrontUrl , options=>options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>,string> (src => src.NationalIdImageFrontUrl))
-                .ForMember(Dest => Dest.NationalIdImageBackUrl , options=>options.MapFrom<UrlResolver<ApplicationUser,CurrentUserDto>,string> (src => src.NationalIdImageBackUrl))
+                .ForMember(Dest => Dest.ProfilePictureUrl, options => options.MapFrom<UrlResolver<ApplicationUser, CurrentUserDto>, string>(src => src.ProfilePictureUrl))
+                .ForMember(Dest => Dest.NationalIdImageFrontUrl, options => options.MapFrom<UrlResolver<ApplicationUser, CurrentUserDto>, string>(src => src.NationalIdImageFrontUrl))
+                .ForMember(Dest => Dest.NationalIdImageBackUrl, options => options.MapFrom<UrlResolver<ApplicationUser, CurrentUserDto>, string>(src => src.NationalIdImageBackUrl))
                 .ForMember(Dest => Dest.UserType, options => options.MapFrom(src => src.UserType.ToString()))
                 .ForMember(Dest => Dest.UserStatus, options => options.MapFrom(src => src.UserStatus.ToString()))
                 .ForMember(Dest => Dest.JoinAt, options => options.MapFrom(src => src.CreatedAt))

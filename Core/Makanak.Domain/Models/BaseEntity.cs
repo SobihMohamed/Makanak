@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Makanak.Domain.Contracts;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Makanak.Domain.Models
 {
-    public class BaseEntity<Key>
+    public class BaseEntity<TKey> : IEntity<TKey>
     {
-        public Key Id { get; set; }
+        public TKey Id { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? CreatedBy { get; set; }
         public string LastModifiedBy { get; set; } = null!;

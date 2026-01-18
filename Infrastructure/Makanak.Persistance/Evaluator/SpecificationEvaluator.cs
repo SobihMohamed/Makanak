@@ -1,4 +1,5 @@
-﻿using Makanak.Domain.Contracts.Specifications;
+﻿using Makanak.Domain.Contracts;
+using Makanak.Domain.Contracts.Specifications;
 using Makanak.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,7 +13,7 @@ namespace Makanak.Persistance.Evaluator
     {
         public static IQueryable<TEntity> GenerateQueery<TEntity, TKey>
             (IQueryable<TEntity> BaseQuery , ISpecifications<TEntity, TKey> Specifications) 
-            where TEntity : BaseEntity<TKey>
+            where TEntity : class, IEntity<TKey>
         {
             var Query = BaseQuery;
             if(Specifications.Criteria is not null)

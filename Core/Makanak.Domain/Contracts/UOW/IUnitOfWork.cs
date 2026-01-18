@@ -10,7 +10,7 @@ namespace Makanak.Domain.Contracts.UOW
 {
     public interface IUnitOfWork
     {
-        IGenericRepo<TEntity, Key> GetRepo<TEntity, Key>() where TEntity : BaseEntity<Key>;
+        IGenericRepo<TEntity, TKey> GetRepo<TEntity, TKey>() where TEntity : class, IEntity<TKey>;
         public Task<int> SaveChangesAsync();
     }
 }

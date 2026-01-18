@@ -1,4 +1,5 @@
-﻿using Makanak.Domain.Contracts.Specifications;
+﻿using Makanak.Domain.Contracts;
+using Makanak.Domain.Contracts.Specifications;
 using Makanak.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -8,12 +9,12 @@ using System.Text;
 namespace Makanak.Services.Specifications
 {
     public abstract class BaseSpecifications<TEntity, TKey> : ISpecifications<TEntity, TKey>
-        where TEntity : BaseEntity<TKey>
+        where TEntity : class, IEntity<TKey>
     {
 
         #region Where
         public Expression<Func<TEntity, bool>> Criteria { get; private set; }
-        public BaseSpecifications(Expression<Func<TEntity,bool>> _Criteria)
+        public BaseSpecifications(Expression<Func<TEntity, bool>> _Criteria)
         {
             Criteria = _Criteria;
         }
