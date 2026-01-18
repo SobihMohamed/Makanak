@@ -1,0 +1,17 @@
+﻿using Makanak.Abstraction.IServices.Admin;
+using Makanak.Abstraction.IServices.Auth;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Makanak.Abstraction.IServices.Manager
+{
+    public interface IServiceManager
+    {
+        IAuthService AuthService { get; }
+        IAdminServices AdminService { get; }
+        IEmailService EmailService { get; }
+        IAttachementServices AttachementServices { get; }
+
+    }
+}

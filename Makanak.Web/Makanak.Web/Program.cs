@@ -1,6 +1,7 @@
 using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
+using Makanak.Abstraction.IServices.Manager;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Persistance.Extensions;
@@ -13,6 +14,7 @@ using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Services.Services;
 using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
+using Makanak.Services.Services.ManagerImplement;
 using Makanak.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -48,11 +50,13 @@ namespace Makanak.Web
             #endregion
 
             #region Dependency Injections
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IAttachementServices, AttachementServices>();
+            //builder.Services.AddScoped<IAuthService, AuthService>();
+            //builder.Services.AddScoped<IAttachementServices, AttachementServices>();
+            //builder.Services.AddScoped<IEmailService, EmailServices>();
+            //builder.Services.AddScoped<IAdminServices, AdminServices>();
+            builder.Services.AddScoped<IServiceManager, ServiceManager>();
+
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IEmailService, EmailServices>();
-            builder.Services.AddScoped<IAdminServices, AdminServices>();
             // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));
             #endregion
