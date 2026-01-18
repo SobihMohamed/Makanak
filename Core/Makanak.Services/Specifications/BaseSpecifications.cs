@@ -27,5 +27,13 @@ namespace Makanak.Services.Specifications
             Includes.Add(includeExpression);
         }
         #endregion
+
+        #region OrderBy
+        public Expression<Func<TEntity, object>> OrderBy { get; private set; }
+        protected void AddOrderBy(Expression<Func<TEntity, object>> orderByExpression)
+        {
+            OrderBy = orderByExpression;
+        }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
 using Makanak.Abstraction.IServices;
+using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
@@ -10,6 +11,7 @@ using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper;
 using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Services.Services;
+using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
 using Makanak.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -29,7 +31,6 @@ namespace Makanak.Web
 
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
-                // ????? ?? ?? ???? ????? ??? Enum ???? ?? ???? (Tenant) ?? ????? (1)
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             }); ;
 
@@ -37,8 +38,11 @@ namespace Makanak.Web
             builder.Services.AddSwaggerDocumentation();
 
             // auto mapper configuration
-            builder.Services.AddAutoMapper(m => m.AddProfile(new UserProfile()));
-
+            builder.Services.AddAutoMapper(cfg =>
+            {
+                cfg.AddProfile(new UserProfile());
+                cfg.AddProfile(new AdminProfile());
+            });
             #region DB Connections
             builder.Services.AddPersistenceServices(builder.Configuration);
             #endregion
@@ -48,8 +52,8 @@ namespace Makanak.Web
             builder.Services.AddScoped<IAttachementServices, AttachementServices>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IEmailService, EmailServices>();
-
-            // ??? ????? ?? ???? AutoMapper ???? ???? ??? UrlResolver
+            builder.Services.AddScoped<IAdminServices, AdminServices>();
+            // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));
             #endregion
 

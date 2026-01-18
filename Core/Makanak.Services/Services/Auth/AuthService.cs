@@ -34,7 +34,7 @@ namespace Makanak.Services.Services.Auth
             if (User == null)
             {
                 //Throw New UserNotFoundException 
-                throw new UserNotFoundException(loginDto.Email);
+                throw UserNotFoundException.ByEmail(loginDto.Email);
             }
             var isPasswordValid = await userManager.CheckPasswordAsync(User!, loginDto.Password);
             if (!isPasswordValid)
@@ -109,7 +109,7 @@ namespace Makanak.Services.Services.Auth
             if (user == null)
             {
                 // Not Found Exception User
-                throw new UserNotFoundException(email);
+                throw  UserNotFoundException.ByEmail(email);
             }
             if (updateProfileDto.ProfilePicture != null)
             {
@@ -141,7 +141,7 @@ namespace Makanak.Services.Services.Auth
             // get the user
             var user = await userManager.FindByEmailAsync(currentEmail);
 
-            if (user == null) throw new UserNotFoundException(currentEmail);
+            if (user == null) throw UserNotFoundException.ByEmail(currentEmail);
 
             // verify current password
             var isPasswordValid = await userManager.CheckPasswordAsync(user, changeEmailDto.CurrentPassword);
@@ -170,7 +170,7 @@ namespace Makanak.Services.Services.Auth
             // get user
             var user = await userManager.FindByIdAsync(otpRecord.UserId);
 
-            if (user == null) throw new UserNotFoundException(otpRecord.Email);
+            if (user == null) throw UserNotFoundException.ByEmail(otpRecord.Email);
 
             // apply changes
             user.Email = otpRecord.Email;
@@ -195,7 +195,7 @@ namespace Makanak.Services.Services.Auth
             if (user == null)
             {
                 // Not Found Exception User
-                throw new UserNotFoundException(email);
+                throw UserNotFoundException.ByEmail(email);
             }
             var currentUserDto = mapper.Map<ApplicationUser, CurrentUserDto>(user);
             if (currentUserDto == null)
@@ -208,7 +208,7 @@ namespace Makanak.Services.Services.Auth
             var user = await userManager.FindByEmailAsync(resetPasswordDto.Email);
             if (user == null)
             {
-                throw new UserNotFoundException(resetPasswordDto.Email);
+                throw UserNotFoundException.ByEmail(resetPasswordDto.Email);
             }
 
             await VerifyAndBurnOtpAsync(resetPasswordDto.Email, resetPasswordDto.Otp, true);
@@ -244,7 +244,7 @@ namespace Makanak.Services.Services.Auth
         {
             // check if exist email 
             var user = await userManager.FindByEmailAsync(forgetPasswordRequestDto.Email);
-            if (user == null) throw new UserNotFoundException(forgetPasswordRequestDto.Email);
+            if (user == null) throw UserNotFoundException.ByEmail(forgetPasswordRequestDto.Email);
 
             // generate new otp
             var newOtp = await GenerateAndSaveOtpAsync(user.Id, forgetPasswordRequestDto.Email);
@@ -260,7 +260,7 @@ namespace Makanak.Services.Services.Auth
         {
             // get user 
             var user = await userManager.FindByEmailAsync(email);
-            if (user == null) throw new UserNotFoundException(email);
+            if (user == null) throw UserNotFoundException.ByEmail(email);
 
             // check status
             if (user.UserStatus == UserStatus.Pending || user.UserStatus == UserStatus.Active)
@@ -302,7 +302,7 @@ namespace Makanak.Services.Services.Auth
             var user = await userManager.FindByEmailAsync(email);
             if (user == null)
             {
-                throw new UserNotFoundException(email);
+                throw UserNotFoundException.ByEmail(email);
             }
             // For JWT, logout is typically handled on the client side by deleting the token.
             // Optionally, you can implement token blacklisting here if needed.
