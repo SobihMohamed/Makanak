@@ -30,9 +30,27 @@ namespace Makanak.Services.Specifications
 
         #region OrderBy
         public Expression<Func<TEntity, object>> OrderBy { get; private set; }
+        public Expression<Func<TEntity, object>> OrderByDesc { get; private set; }
+
         protected void AddOrderBy(Expression<Func<TEntity, object>> orderByExpression)
         {
             OrderBy = orderByExpression;
+        }
+        protected void AddOrderByDesc(Expression<Func<TEntity, object>> orderByExpression)
+        {
+            OrderByDesc = orderByExpression;
+        }
+        #endregion
+
+        #region Pagenation
+        public int Take { get; private set; }
+        public int Skip { get; private set; }
+        public bool IsPagingEnabled { get; private set; } = false;
+        protected void ApplyPagenation(int pageSize, int pageIndex)
+        {
+            Skip = (pageIndex - 1) * pageSize;
+            Take = pageSize;
+            IsPagingEnabled = true;
         }
         #endregion
     }

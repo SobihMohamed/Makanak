@@ -22,9 +22,7 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IAttachementServices> _attachementServices;
         private readonly Lazy<IAuthService> _authService;
         private readonly Lazy<IAdminServices> _adminService;
-        public ServiceManager(
-            IUnitOfWork _Uow,
-            IMapper mapper,
+        public ServiceManager(IUnitOfWork _Uow,IMapper mapper,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager)
         {

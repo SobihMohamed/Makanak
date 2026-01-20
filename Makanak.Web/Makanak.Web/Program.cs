@@ -27,38 +27,40 @@ namespace Makanak.Web
     {
         public static async Task Main(string[] args)
         {
+
             var builder = WebApplication.CreateBuilder(args);
 
+            #region Addded Controllers
             // Add services to the container.
-
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             }); ;
+            #endregion
 
+            #region Added Swagger
             // swagger documentation 
             builder.Services.AddSwaggerDocumentation();
+            #endregion
 
+            #region Added AutoMapper
             // auto mapper configuration
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile(new UserProfile());
                 cfg.AddProfile(new AdminProfile());
             });
+            // AutoMapper UrlResolver
+            builder.Services.AddTransient(typeof(UrlResolver<,>));
+            #endregion
+
             #region DB Connections
             builder.Services.AddPersistenceServices(builder.Configuration);
             #endregion
 
             #region Dependency Injections
-            //builder.Services.AddScoped<IAuthService, AuthService>();
-            //builder.Services.AddScoped<IAttachementServices, AttachementServices>();
-            //builder.Services.AddScoped<IEmailService, EmailServices>();
-            //builder.Services.AddScoped<IAdminServices, AdminServices>();
-            builder.Services.AddScoped<IServiceManager, ServiceManager>();
-
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            // AutoMapper UrlResolver
-            builder.Services.AddTransient(typeof(UrlResolver<,>));
+            builder.Services.AddScoped<IServiceManager, ServiceManager>();
             #endregion
 
             #region JWT Configuration
@@ -87,7 +89,7 @@ namespace Makanak.Web
             });
             #endregion
 
-
+            #region App 
             var app = builder.Build();
 
             #region Data Seeding Configuration
@@ -114,6 +116,7 @@ namespace Makanak.Web
             app.MapControllers();
 
             app.Run();
+            #endregion
         }
     }
 }

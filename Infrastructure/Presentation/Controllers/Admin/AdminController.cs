@@ -1,6 +1,9 @@
 ﻿using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Shared.Common.Params;
+using Makanak.Shared.Common.Params.User;
 using Makanak.Shared.Dto_s.Admin;
+using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,11 +13,11 @@ namespace Makanak.Presentation.Controllers.Admin
     [Authorize(Roles = "Admin")]
     public class AdminController(IServiceManager serviceManager) : AppBaseController
     {
-        [HttpGet("users/pending")]
-        public async Task<IActionResult> GetPendingUsers()
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers([FromQuery] UserParams userParams)
         {
-            var pendingUsers = await serviceManager.AdminService.GetAllPendingUsersAsync();
-            return Success(pendingUsers, "Pending users retrived successfully");
+            var pendingUsers = await serviceManager.AdminService.GetAllUsersAsync(userParams);
+            return Success(pendingUsers, "users retrived successfully");
         }
 
         [HttpPut("users/status")]
@@ -33,5 +36,11 @@ namespace Makanak.Presentation.Controllers.Admin
             return Success(userDetails, "User verification details retrieved successfully");
         }
 
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            var stats = await serviceManager.AdminService.GetDashboardStatsAsync();
+            return Success(stats, "Admin Dashboard Statistics retrieved successfully");
+        }
     }
 }

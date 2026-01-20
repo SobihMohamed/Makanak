@@ -12,6 +12,7 @@ namespace Makanak.Presentation.Controllers.Auth
 {
     public class AuthController(IServiceManager serviceManager) : AppBaseController
     {
+        #region Basic Actions
         [HttpPost("login")]  // POST: api/auth/login
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
@@ -26,6 +27,14 @@ namespace Makanak.Presentation.Controllers.Auth
             return Created(result, "Registration Successful");
         }
 
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            return Ok(new { message = "Logged out successfully. Please remove the token from client storage." });
+        }
+        #endregion
+
+        #region User Profile Actions
         [Authorize]
         [HttpGet("profile")]  // GET: api/auth/profile
         public async Task<IActionResult> GetProfile()
@@ -44,6 +53,9 @@ namespace Makanak.Presentation.Controllers.Auth
             return Success(result, "User Profile Updated Successfully");
         }
 
+        #endregion
+       
+        #region Password
         [HttpPost("forget-password")]  // POST: api/auth/forget-password
         public async Task<IActionResult> ForgetPassword([FromBody] ForgetPasswordRequestDto forgetPasswordRequestDto)
         {
@@ -64,7 +76,9 @@ namespace Makanak.Presentation.Controllers.Auth
             var res = await serviceManager.AuthService.ResetPasswordAsync(resetPasswordDto);
             return Success(res, "Password has been reset successfully.");
         }
+        #endregion
 
+        #region Verifying Identity
         [Authorize]
         [HttpPost("verify-identity")] // POST: api/auth/verify-identity
         public async Task<IActionResult> VerifyIdentity([FromForm] VerifyIdentityDto verifyIdentityDto)
@@ -93,11 +107,7 @@ namespace Makanak.Presentation.Controllers.Auth
 
             return Success("Email address updated successfully.");
         }
+        #endregion
 
-        [HttpPost("logout")]
-        public IActionResult Logout()
-        {
-            return Ok(new { message = "Logged out successfully. Please remove the token from client storage." });
-        }
     }
 }

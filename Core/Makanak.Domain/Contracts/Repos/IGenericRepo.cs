@@ -14,6 +14,8 @@ namespace Makanak.Domain.Contracts.Repos
         public Task<IEnumerable<TEntity>> GetAllWithSpecificationAsync(ISpecifications<TEntity, TKey> specifications);
         public Task<TEntity> GetByIdAsync(TKey id);
         public Task<TEntity> GetByIdWithSpecificationsAsync(ISpecifications<TEntity, TKey> specifications);
+
+        public Task<int> CountAsync(ISpecifications<TEntity, TKey> specifications);
         public void AddAsync(TEntity entity);
         public void Update(TEntity entity);
 

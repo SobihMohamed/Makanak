@@ -7,6 +7,9 @@ using Makanak.Domain.Exceptions;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Services.Specifications.User;
+using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params;
+using Makanak.Shared.Common.Params.User;
 using Makanak.Shared.Dto_s.Admin;
 using Microsoft.Extensions.Configuration;
 
@@ -14,24 +17,31 @@ using Microsoft.Extensions.Configuration;
 namespace Makanak.Services.Services.Admin
 {
     public class AdminServices(IUnitOfWork _unitOfWork , IMapper mapper,
-        IEmailService emailService , IConfiguration configuration) : IAdminServices
+        IEmailService emailService, IConfiguration configuration) : IAdminServices
     {
-        public async Task<IEnumerable<UserForApprovalDto>> GetAllPendingUsersAsync()
+        public async Task<Pagination<UserForApprovalDto>> GetAllUsersAsync(UserParams userParams)
         {
             // get the user repository
             var userRepository = _unitOfWork.GetRepo<ApplicationUser,string>();
 
             // generate the specifications for pending users
-            var pendingUsersSpec = new UserSpecifications(UserStatus.Pending);
+            // is count = false so , it apply pagination & sorting & search which get the data only 
+            var UsersSpec = new UserSpecifications(userParams,  false);
 
             // get all pending users
-            var pendingUsers = await userRepository.GetAllWithSpecificationAsync(pendingUsersSpec);
+            var Users = await userRepository.GetAllWithSpecificationAsync(UsersSpec);
+
+            // get total count of pending users
+            var totalCountSpec = new UserSpecifications(userParams, true);
+
+            // get the count
+            var totalCount = await userRepository.CountAsync(totalCountSpec);
 
             // map the users to UserForApprovalDto
-            var pendingUsersDto = mapper.Map<IEnumerable<UserForApprovalDto>>(pendingUsers);
+            var UsersDto = mapper.Map<IReadOnlyList<UserForApprovalDto>>(Users);
 
             // return the result
-            return pendingUsersDto;
+            return new Pagination<UserForApprovalDto>(userParams.PageIndex,userParams.PageSize,totalCount,UsersDto);
         }
 
         public async Task<bool> UpdateUserStatusAsync(UpdateUserStatusDto dto)
@@ -104,6 +114,40 @@ namespace Makanak.Services.Services.Admin
 
             // return the result
             return userVerificationDetailsDto;
+        }
+
+        public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
+        {
+            var userRepo = _unitOfWork.GetRepo<ApplicationUser, string>();
+
+            async Task<int> GetCount(UserStatus? status = null, UserTypes? type = null)
+            {
+                var parameters = new UserParams
+                {
+                    Status = status,
+                    Type = type
+                };
+                // isCount = true to get only the count without pagination and sorting
+                var spec = new UserSpecifications(parameters, isCount: true);
+                return await userRepo.CountAsync(spec);
+            }
+            var stats = new AdminDashboardStatsDto
+            {
+             
+                TotalUsers = await GetCount(status: null, type: null),
+                
+                PendingUsers = await GetCount(status: UserStatus.Pending),
+                ActiveUsers = await GetCount(status: UserStatus.Active),
+                RejectsCount = await GetCount(status: UserStatus.Rejected),
+                BannedsCount = await GetCount(status: UserStatus.Banned), 
+                NewsCount = await GetCount(status: UserStatus.New),
+
+                OwnersCount = await GetCount(type: UserTypes.Owner),
+                AdminsCount = await GetCount(type: UserTypes.Admin),
+                TenantsCount = await GetCount(type: UserTypes.Tenant)
+            };
+
+            return stats;
         }
     }
 }

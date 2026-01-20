@@ -4,6 +4,7 @@ using Makanak.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -20,10 +21,28 @@ namespace Makanak.Persistance.Evaluator
             {
                 Query = Query.Where(Specifications.Criteria);
             }
+
             if (Specifications.Includes is not null && Specifications.Includes.Any())
             {
                 Query = Specifications.Includes.Aggregate(Query, (CurrentQuery, Expression) => CurrentQuery.Include(Expression));
             }
+
+            if(Specifications.OrderBy is not null)
+            {
+                Query = Query.OrderBy(Specifications.OrderBy);
+            }
+
+            if (Specifications.OrderByDesc is not null)
+            {
+                Query = Query.OrderByDescending(Specifications.OrderByDesc);
+            }
+           
+            if (Specifications.IsPagingEnabled)
+            {
+                Query = Query.Skip(Specifications.Skip).Take(Specifications.Take);
+            }
+
+
             return Query;
         }
     }

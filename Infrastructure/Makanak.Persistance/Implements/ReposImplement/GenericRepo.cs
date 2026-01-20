@@ -42,9 +42,16 @@ namespace Makanak.Persistance.Implements.ReposImplement
                 
             return await Query.FirstOrDefaultAsync();
         }
+        public async Task<int> CountAsync(ISpecifications<TEntity, Key> specifications)
+        {
+            var BaseQuery = _context.Set<TEntity>();
+            var Query = SpecificationEvaluator.GenerateQueery(BaseQuery, specifications);
+            return await Query.CountAsync();
+
+        }
 
         public void DeleteRangeAsync(IEnumerable<TEntity> entities) => _context.Set<TEntity>().RemoveRange(entities);
 
-
+       
     }
 }
