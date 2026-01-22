@@ -27,6 +27,7 @@ namespace Makanak.Persistance.Configurations
             builder.Property(p => p.CommissionPercentage).HasColumnType("decimal(18,2)");
 
             builder.Property(p => p.PropertyType).HasConversion<string>();
+            builder.Property(p => p.PropertyStatus).HasConversion<string>();
 
             builder.HasOne(p=>p.Governorate)
                    .WithMany()

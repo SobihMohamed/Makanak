@@ -24,7 +24,8 @@ namespace Makanak.Domain.Models.PropertyEntities
         public bool IsAvailable { get; set; } = true;
         
         public PropertyType PropertyType { get; set; }
-        
+        public PropertyStatus PropertyStatus { get; set; } = PropertyStatus.Pending;
+
         public int GovernorateId { get; set; }
         public virtual Governorate Governorate { get; set; } = null!;
         public string AreaName { get; set; } = null!;

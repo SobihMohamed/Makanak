@@ -8,11 +8,9 @@ namespace Makanak.Shared.EnumsHelper.Property
 {
     public enum PropertyType
     {
-        Apartment = 1,
+        Chalet = 1,
         Villa = 2,
-        Chalet = 3,
-        Studio = 4,
-        Dublex = 5,
-        Penthouse = 6
+        Apartment = 3,
+        Duplex = 4
     }
 }
