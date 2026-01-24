@@ -1,5 +1,6 @@
 ﻿using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
+using Makanak.Abstraction.IServices.PropertyService;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,6 +13,6 @@ namespace Makanak.Abstraction.IServices.Manager
         IAdminServices AdminService { get; }
         IEmailService EmailService { get; }
         IAttachementServices AttachementServices { get; }
-
+        IPropertyService PropertyServices { get; }
     }
 }

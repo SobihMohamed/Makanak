@@ -3,6 +3,7 @@ using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Models.Identity;
@@ -22,6 +23,7 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IAttachementServices> _attachementServices;
         private readonly Lazy<IAuthService> _authService;
         private readonly Lazy<IAdminServices> _adminService;
+        private readonly Lazy<IPropertyService> _propertyService;
         public ServiceManager(IUnitOfWork _Uow,IMapper mapper,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager)
@@ -40,11 +42,14 @@ namespace Makanak.Services.Services.ManagerImplement
             ));
 
             _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration));
+            
+            _propertyService = new Lazy<IPropertyService>(() => throw new NotImplementedException());
         }
         public IEmailService EmailService => _emailService.Value;
         public IAttachementServices AttachementServices => _attachementServices.Value;
         public IAuthService AuthService => _authService.Value;
         public IAdminServices AdminService => _adminService.Value;
 
+        public IPropertyService PropertyServices => _propertyService.Value;
     }
 }

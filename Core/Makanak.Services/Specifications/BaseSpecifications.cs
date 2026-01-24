@@ -31,15 +31,20 @@ namespace Makanak.Services.Specifications
         #region OrderBy
         public Expression<Func<TEntity, object>> OrderBy { get; private set; }
         public Expression<Func<TEntity, object>> OrderByDesc { get; private set; }
+        public List<OrderExpressionInfo<TEntity>> OrderExpressions { get; private set; } = new();
 
+        protected void AddOrderExpression(Expression<Func<TEntity, object>> orderByExpression, bool isDescending)
+        {
+            OrderExpressions.Add(new OrderExpressionInfo<TEntity>
+            {
+                Expression = orderByExpression,
+                IsDescending = isDescending
+            });
+        }
         protected void AddOrderBy(Expression<Func<TEntity, object>> orderByExpression)
-        {
-            OrderBy = orderByExpression;
-        }
+         =>   AddOrderExpression(orderByExpression, false);
         protected void AddOrderByDesc(Expression<Func<TEntity, object>> orderByExpression)
-        {
-            OrderByDesc = orderByExpression;
-        }
+         =>   AddOrderExpression(orderByExpression, true);
         #endregion
 
         #region Pagenation

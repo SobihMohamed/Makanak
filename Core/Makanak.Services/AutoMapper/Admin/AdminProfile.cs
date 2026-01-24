@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Makanak.Services.AutoMapper
+namespace Makanak.Services.AutoMapper.Admin
 {
     public class AdminProfile : Profile
     {

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Makanak.Persistance.Evaluator
 {
@@ -27,16 +28,30 @@ namespace Makanak.Persistance.Evaluator
                 Query = Specifications.Includes.Aggregate(Query, (CurrentQuery, Expression) => CurrentQuery.Include(Expression));
             }
 
-            if(Specifications.OrderBy is not null)
+            if (Specifications.OrderExpressions != null && Specifications.OrderExpressions.Count > 0)
             {
-                Query = Query.OrderBy(Specifications.OrderBy);
+                // 1. التعامل مع أول ترتيب (Primary Sort)
+                // لازم يتحول لـ IOrderedQueryable عشان يقبل ThenBy بعد كدة
+                var firstSort = Specifications.OrderExpressions[0];
+
+                IOrderedQueryable<TEntity> orderedQuery = firstSort.IsDescending
+                    ? Query.OrderByDescending(firstSort.Expression)
+                    : Query.OrderBy(firstSort.Expression);
+
+                // 2. التعامل مع الترتيبات التالية (Secondary Sorts)
+                for (int i = 1; i < Specifications.OrderExpressions.Count; i++)
+                {
+                    var nextSort = Specifications.OrderExpressions[i];
+
+                    orderedQuery = nextSort.IsDescending
+                        ? orderedQuery.ThenByDescending(nextSort.Expression)
+                        : orderedQuery.ThenBy(nextSort.Expression);
+                }
+
+                // تحديث الكويري النهائي
+                Query = orderedQuery;
             }
 
-            if (Specifications.OrderByDesc is not null)
-            {
-                Query = Query.OrderByDescending(Specifications.OrderByDesc);
-            }
-           
             if (Specifications.IsPagingEnabled)
             {
                 Query = Query.Skip(Specifications.Skip).Take(Specifications.Take);

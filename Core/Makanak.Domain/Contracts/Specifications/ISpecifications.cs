@@ -1,4 +1,5 @@
 ﻿using Makanak.Domain.Models;
+using Makanak.Services.Specifications;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -12,6 +13,7 @@ namespace Makanak.Domain.Contracts.Specifications
         List<Expression<Func<TEntity, object>>> Includes { get; }
 
         // OrderBy
+        List<OrderExpressionInfo<TEntity>> OrderExpressions { get; }
         public Expression<Func<TEntity, object>> OrderByDesc { get; }
         public Expression<Func<TEntity, object>> OrderBy { get; }
 
