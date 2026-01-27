@@ -1,4 +1,4 @@
-﻿using Makanak.Persistance.Seeds;
+﻿using Makanak.Domain.Contracts.InitializerDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,8 +15,8 @@ namespace Makanak.Persistance.Extensions
                 var services = scope.ServiceProvider;
                 try
                 {
-                    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-                    await RoleSeeder.SeedRolesAsync(roleManager);
+                    var initializer = services.GetRequiredService<IDbInitializer>();
+                    await initializer.DataSeedAsync();
                 }
                 catch (Exception ex)
                 {

@@ -21,6 +21,11 @@ namespace Makanak.Services.Specifications.Property_Spec
             AddInclude(p => p.Governorate);
             AddInclude(p => p.Owner);
         }
+        // count properties of owner
+        public PropertySpecifications(string ownerId , bool Count) 
+            : base(p => p.OwnerId == ownerId)
+        {
+        }
 
         public PropertySpecifications(PropertyParams propertyParams, bool isCount = false)
             : base
@@ -37,9 +42,9 @@ namespace Makanak.Services.Specifications.Property_Spec
                 (!propertyParams.GovernorateId.HasValue || p.GovernorateId == propertyParams.GovernorateId)
                     &&
                 (!propertyParams.Type.HasValue || p.PropertyType == propertyParams.Type)
-                    &&
+                    //&&
                 //price limit is doubled to include more properties for ranking
-                (!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice * 2)   
+                //(!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice * 2)   
             )
         {
             if (!isCount)

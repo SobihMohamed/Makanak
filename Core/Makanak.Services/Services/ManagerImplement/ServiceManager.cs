@@ -9,6 +9,7 @@ using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Models.Identity;
 using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
+using Makanak.Services.Services.PropertyImplement;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -43,7 +44,7 @@ namespace Makanak.Services.Services.ManagerImplement
 
             _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration));
             
-            _propertyService = new Lazy<IPropertyService>(() => throw new NotImplementedException());
+            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(mapper,AttachementServices, _Uow));
         }
         public IEmailService EmailService => _emailService.Value;
         public IAttachementServices AttachementServices => _attachementServices.Value;

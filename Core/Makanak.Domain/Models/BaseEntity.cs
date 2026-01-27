@@ -12,7 +12,7 @@ namespace Makanak.Domain.Models
         public TKey Id { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? CreatedBy { get; set; }
-        public string LastModifiedBy { get; set; } = null!;
+        public string? LastModifiedBy { get; set; } = null!;
         public DateTime? UpdatedAt { get; set; }
         public bool IsDeleted { get; set; } = false;
     }

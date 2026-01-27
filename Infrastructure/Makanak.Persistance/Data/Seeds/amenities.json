@@ -1,0 +1,44 @@
+﻿[
+  {
+    "NameEn": "WiFi",
+    "NameAr": "واي فاي",
+    "Description": "High-speed wireless internet access available throughout the property.",
+    "Icon": "fa-solid fa-wifi"
+  },
+  {
+    "NameEn": "Swimming Pool",
+    "NameAr": "حمام سباحة",
+    "Description": "Private or shared swimming pool suitable for relaxation.",
+    "Icon": "fa-solid fa-water-ladder"
+  },
+  {
+    "NameEn": "Air Conditioning",
+    "NameAr": "تكييف هواء",
+    "Description": "Full air conditioning in all rooms to ensure comfort.",
+    "Icon": "fa-solid fa-snowflake"
+  },
+  {
+    "NameEn": "Free Parking",
+    "NameAr": "موقف سيارات مجاني",
+    "Description": "Secure and free parking spot available on premises.",
+    "Icon": "fa-solid fa-square-parking"
+  },
+  {
+    "NameEn": "BBQ Grill",
+    "NameAr": "شواية باربكيو",
+    "Description": "Outdoor barbecue grill available for use.",
+    "Icon": "fa-solid fa-fire-burner"
+  },
+  {
+    "NameEn": "Kitchen",
+    "NameAr": "مطبخ",
+    "Description": "Fully equipped kitchen with appliances and cookware.",
+    "Icon": "fa-solid fa-kitchen-set"
+  },
+  {
+    "NameEn": "TV",
+    "NameAr": "تليفيزيون",
+    "Description": "Smart TV with access to streaming services.",
+    "Icon": "fa-solid fa-tv"
+  }
+]

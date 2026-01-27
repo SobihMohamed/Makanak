@@ -20,5 +20,16 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Makanak.Services\Makanak.Services.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="Data\Seeds\amenities.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Seeds\governorates.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\Seeds\properties.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

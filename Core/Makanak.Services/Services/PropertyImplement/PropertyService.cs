@@ -23,13 +23,22 @@ namespace Makanak.Services.Services.PropertyImplement
             // 1 - Map CreatePropertyDto to Property entity
             var property = _mapper.Map<Property>(dto);
 
+            var propertyRepository = _unitOfWork.GetRepo<Property, int>();
+
+            var countSpecs = new PropertySpecifications(ownerId, true);
+
+            var existingProperties = await propertyRepository.CountAsync(countSpecs);
+            var nextPropertyNumber = existingProperties + 1;
+            string propFolderName = $"Property_{nextPropertyNumber}";
+
             // 2 - Set additional fields 
             property.OwnerId = ownerId;
             property.IsAvailable = true;
             property.PropertyStatus = PropertyStatus.Pending;
 
             // 3 - Main Image handling
-            string mainImagesPath = Path.Combine(ownerId, "Properties", "Main");
+            string mainImagesPath = Path.Combine("Properties", ownerId, propFolderName, "Main");
+            
             if (dto.MainImage != null)
             {
                 var realMainPath = await _attachementServices.UploadImageAsync(dto.MainImage , mainImagesPath);
@@ -37,7 +46,8 @@ namespace Makanak.Services.Services.PropertyImplement
             }
 
             // 4 - Gallery Images handling 
-            string galleryImagesPath = Path.Combine(ownerId, "Properties", "Gallery");
+            string galleryImagesPath = Path.Combine("Properties", ownerId,propFolderName, "Gallery");
+            
             if(dto.GalleryImages != null && dto.GalleryImages.Count > 0)
             {
                 foreach (var image in dto.GalleryImages)
@@ -78,10 +88,14 @@ namespace Makanak.Services.Services.PropertyImplement
             }
 
             // 6 - Save Property to database
-            var propertyRepository = _unitOfWork.GetRepo<Property,int>();
+            
+
             propertyRepository.AddAsync(property);
 
             await _unitOfWork.SaveChangesAsync();
+
+            var spec = new PropertySpecifications(property.Id);
+            var loadedProperty = await propertyRepository.GetByIdWithSpecificationsAsync(spec);
 
             // Mappig & Return
             return _mapper.Map<PropertyDetailDto>(property);
@@ -124,19 +138,32 @@ namespace Makanak.Services.Services.PropertyImplement
             return data;
         }
 
-        public async Task<PropertyDetailDto> UpdatePropertyAsync(UpdatePropertyDto dto, string ownerId)
+        public async Task<PropertyDetailDto> UpdatePropertyAsync(int Id , UpdatePropertyDto dto, string ownerId)
         {
             // get property repo
             var propertyRepo = _unitOfWork.GetRepo<Property, int>();
 
             // generate specifications
-            var spec = new PropertySpecifications(dto.Id);
+            var spec = new PropertySpecifications(Id);
             var property = await propertyRepo.GetByIdWithSpecificationsAsync(spec);
 
             // check if same Owner 
-            if (property == null || dto.Id != property.Id || property.OwnerId != ownerId)
-                throw new PropertyNotFound(dto.Id);
+            if (property == null || Id != property.Id || property.OwnerId != ownerId)
+                throw new PropertyNotFound(Id);
 
+            // get the property folder name from existing images
+            string propFolderName = "Unknown_Property"; // Default fallback
+
+            var referencePath = property.MainImageUrl ?? property.PropertyImages?.FirstOrDefault()?.ImageUrl;
+            if (!string.IsNullOrEmpty(referencePath))
+            {
+                var parts = referencePath.Split('/');
+                // [0]uploads, [1]Properties, [2]OwnerId, [3]FolderName
+                if (parts.Length > 3)
+                {
+                    propFolderName = parts[3];
+                }
+            }
             // map updated fields from dto to entity
             _mapper.Map(dto , property);
 
@@ -153,7 +180,7 @@ namespace Makanak.Services.Services.PropertyImplement
                     await _attachementServices.DeleteImage(property.MainImageUrl);
                 }
                 // upload new main image
-                string mainImagesPath = Path.Combine(ownerId, "Properties", "Main");
+                string mainImagesPath = Path.Combine("Properties", ownerId, propFolderName, "Main");
                 var realMainPath = await _attachementServices.UploadImageAsync(dto.MainImage, mainImagesPath);
                 property.MainImageUrl = realMainPath;
             }
@@ -178,7 +205,7 @@ namespace Makanak.Services.Services.PropertyImplement
             // check new gallery images to add
             if (dto.GalleryImages != null && dto.GalleryImages.Count > 0)
             {
-                string galleryPath = Path.Combine(ownerId, "Properties", "Gallery");
+                string galleryPath = Path.Combine("Properties", ownerId, propFolderName, "Gallery");
 
                 foreach (var file in dto.GalleryImages)
                 {
@@ -233,8 +260,11 @@ namespace Makanak.Services.Services.PropertyImplement
         {
             var propertyRepo = _unitOfWork.GetRepo<Property, int>();
 
+            // create specifications 
+            var specs = new PropertySpecifications(propertyId);
+
             // 1. Retrieve Property
-            var property = await propertyRepo.GetByIdAsync(propertyId);
+            var property = await propertyRepo.GetByIdWithSpecificationsAsync(specs);
 
             if (property == null)
                 throw new PropertyNotFound(propertyId);
@@ -243,15 +273,19 @@ namespace Makanak.Services.Services.PropertyImplement
             if (property.OwnerId != ownerId)
                 throw new UnauthorizedAccessException("You are not authorized to delete this property.");
 
-            // 2. Soft Delete Logic
-            property.IsDeleted = true;
+            if(!string.IsNullOrEmpty(property.MainImageUrl))
+            {
+                await _attachementServices.DeleteImage(property.MainImageUrl);
+            }
+            if(property.PropertyImages != null && property.PropertyImages.Count > 0)
+            {
+                foreach (var img in property.PropertyImages)
+                {
+                    await _attachementServices.DeleteImage(img.ImageUrl);
+                }
+            }
 
-            property.IsAvailable = false;
-
-            property.PropertyStatus = PropertyStatus.Rejected;
-
-            // 3. Save
-            propertyRepo.Update(property);
+            propertyRepo.Delete(property);
             var result = await _unitOfWork.SaveChangesAsync();
 
             return result > 0;

@@ -22,12 +22,13 @@ namespace Makanak.Services.AutoMapper.PropertyMapper
             CreateMap<Property , PropertyDto>()
                 .ForMember(dest => dest.PropertyStatus, opt => opt.MapFrom(src => src.PropertyStatus.ToString()))
                 .ForMember(dest => dest.PropertyType, opt => opt.MapFrom(src => src.PropertyType.ToString()))
+                .ForMember(dest => dest.GovernorateName, opt => opt.MapFrom(src => src.Governorate.NameEn.ToString()))
                 .ForMember(dest => dest.MainImageUrl, opt => opt.MapFrom<UrlResolver<Property, PropertyDto>, string>(src => src.MainImageUrl));
 
             CreateMap<Property, PropertyDetailDto>()
                 .ForMember(dest => dest.PropertyStatus, opt => opt.MapFrom(src => src.PropertyStatus.ToString()))
                 .ForMember(dest => dest.PropertyType, opt => opt.MapFrom(src => src.PropertyType.ToString()))
-                .ForMember(dest => dest.GovernorateName, opt => opt.MapFrom(src => src.Governorate.NameEn))
+                .ForMember(dest => dest.GovernorateName, opt => opt.MapFrom(src => src.Governorate.NameEn.ToString()))
                 .ForMember(dest => dest.MainImageUrl, opt => opt.MapFrom<UrlResolver<Property, PropertyDetailDto>, string>(src => src.MainImageUrl));
         
             CreateMap<PropertyImage, PropertyImageDto>()

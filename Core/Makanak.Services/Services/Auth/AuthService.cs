@@ -117,7 +117,8 @@ namespace Makanak.Services.Services.Auth
                 {
                     await attachementServices.DeleteImage(user.ProfilePictureUrl);
                 }
-                string imagePath = await attachementServices.UploadImageAsync(updateProfileDto.ProfilePicture, $"{user.Id}");
+                string ProfilePicturePath = Path.Combine("Users",user.Id,"Profile");
+                string imagePath = await attachementServices.UploadImageAsync(updateProfileDto.ProfilePicture, ProfilePicturePath);
                 user.ProfilePictureUrl = imagePath;
             }
             mapper.Map(updateProfileDto, user); // assign values and save in user
@@ -277,8 +278,10 @@ namespace Makanak.Services.Services.Auth
             if (isDuplicated != null) throw new BadRequestException("National ID is already in use by another user.");
 
             // upload front & back image
-            string frontImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageFrontUrl!, $"{user.Id}");
-            string backImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageBackUrl!, $"{user.Id}");
+            var ImagePath = Path.Combine("Users", user.Id, "Identity");
+
+            string frontImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageFrontUrl!, ImagePath);
+            string backImagePath = await attachementServices.UploadImageAsync(verifyIdentityDto.NationalIdImageBackUrl!, ImagePath);
 
             // update user info
             user.NationalId = verifyIdentityDto.NationalId;

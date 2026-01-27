@@ -2,15 +2,20 @@ using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Domain.Contracts.InitializerDB;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Persistance.Extensions;
+using Makanak.Persistance.Implements.InitializerImplement;
 using Makanak.Persistance.Implements.ReposImplement;
 using Makanak.Persistance.Implements.UOW;
 using Makanak.Persistance.ProgramServices;
 using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper;
+using Makanak.Services.AutoMapper.Admin;
+using Makanak.Services.AutoMapper.PropertyMapper;
 using Makanak.Services.AutoMapper.Resolver;
+using Makanak.Services.AutoMapper.User;
 using Makanak.Services.Services;
 using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
@@ -49,6 +54,7 @@ namespace Makanak.Web
             {
                 cfg.AddProfile(new UserProfile());
                 cfg.AddProfile(new AdminProfile());
+                cfg.AddProfile(new PropertyProfile());
             });
             // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));
@@ -61,6 +67,7 @@ namespace Makanak.Web
             #region Dependency Injections
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IServiceManager, ServiceManager>();
+            builder.Services.AddScoped<IDbInitializer, DbInitialized>();
             #endregion
 
             #region JWT Configuration

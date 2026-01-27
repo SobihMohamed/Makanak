@@ -10,7 +10,7 @@ namespace Makanak.Shared.Dto_s.Property
         public string Title { get; set; } = null!;
         public string MainImageUrl { get; set; } = null!;
         public decimal PricePerNight { get; set; }
-        public string AreaName { get; set; } = null!; 
+        public string GovernorateName { get; set; } = null!;
         public string PropertyStatus { get; set; } = null!; 
         public string PropertyType { get; set; } = null!;   
         public DateTime CreatedAt { get; set; }
