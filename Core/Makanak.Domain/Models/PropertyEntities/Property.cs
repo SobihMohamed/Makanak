@@ -32,7 +32,7 @@ namespace Makanak.Domain.Models.PropertyEntities
         public string Address { get; set; } = null!;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-
+        public string? RejectedReason { get; set; } = string.Empty;
         public string OwnerId { get; set; } = null!;
         public virtual ApplicationUser Owner { get; set; } = null!;
         public decimal CommissionPercentage { get; set; } = 10; // Default commission is 10%

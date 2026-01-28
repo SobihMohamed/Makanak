@@ -6,11 +6,14 @@ using Makanak.Domain.EnumsHelper.User;
 using Makanak.Domain.Exceptions;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
+using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Services.Specifications.User;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params;
 using Makanak.Shared.Common.Params.User;
 using Makanak.Shared.Dto_s.Admin;
+using Makanak.Shared.EnumsHelper.Property;
 using Microsoft.Extensions.Configuration;
 
 
@@ -60,11 +63,8 @@ namespace Makanak.Services.Services.Admin
                 throw  UserNotFoundException.ById(dto.UserId);
 
             // update the user status and rejected reason
-            if (Enum.TryParse<UserStatus>(dto.NewStatus, true, out var newStatus))
-                user.UserStatus = newStatus;
-            else
-                throw new BadRequestException($"Invalid status: {dto.NewStatus}");
-            
+            user.UserStatus = dto.NewStatus;
+
             user.RejectedReason = dto.RejectedReason;
             userRepository.Update(user);
 
@@ -77,7 +77,7 @@ namespace Makanak.Services.Services.Admin
                 {
                     string emailBody = "";
 
-                    if (!string.IsNullOrEmpty(dto.RejectedReason) && newStatus == UserStatus.Rejected)
+                    if (!string.IsNullOrEmpty(dto.RejectedReason) && dto.NewStatus == UserStatus.Rejected)
                     {
                         emailBody = $"Dear {user.Name},<br/><br/>Your account verification status has been updated to <b>{dto.NewStatus}</b>.<br/><br/><b>Reason:</b> {dto.RejectedReason}<br/><br/>Best regards,<br/>Makanak Team";
                     }
@@ -148,6 +148,61 @@ namespace Makanak.Services.Services.Admin
             };
 
             return stats;
+        }
+
+        public async Task<bool> UpdatePropertyStatus(UpdatePropertyStatusDto dto)
+        {
+            // get property repository
+            var propRepo = _unitOfWork.GetRepo<Property, int>();
+
+            // generate specifications for the property to be updated
+            var propSpec = new PropertySpecifications(dto.PropertyId);
+
+            // get the property with the specifications
+            var property = await propRepo.GetByIdWithSpecificationsAsync(propSpec);
+
+            // if property not found return false
+            if (property == null)
+                throw new PropertyNotFound(dto.PropertyId);
+
+            // update the property status and rejected reason
+            property.PropertyStatus = dto.NewStatus;
+            property.RejectedReason= dto.RejectedReason;
+
+            propRepo.Update(property);
+            // save the changes
+            var res = await _unitOfWork.SaveChangesAsync();
+           
+            if (res > 0)
+            {
+                try
+                {
+                    var ownerName = property.Owner.Name;
+                    var ownerEmail = property.Owner.Email;
+                    string emailBody = "";
+
+                    if (!string.IsNullOrEmpty(dto.RejectedReason) && dto.NewStatus == PropertyStatus.Rejected)
+                    {
+                        emailBody = $"Dear {ownerName},<br/><br/>Your property listing <b>{property.Title}</b> has been <b>Rejected</b>.<br/><br/><b>Reason:</b> {dto.RejectedReason}<br/><br/>Best regards,<br/>Makanak Team";
+                    }
+                    else if (dto.NewStatus == PropertyStatus.Accepted)
+                    {
+                        emailBody = $"Dear {ownerName},<br/><br/>Congratulations! Your property listing <b>{property.Title}</b> has been <b>Accepted</b> and is now live on Makanak.<br/><br/>Best regards,<br/>Makanak Team";
+                    }
+
+                    await emailService.SendEmailAsync(ownerEmail, "Makanak - Property Status Update", emailBody);
+
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception (logging mechanism not shown here
+                    throw new BadRequestException($"Email Failed : " + ex.Message);
+                }
+                return true;
+            }
+            
+            return false;
+
         }
     }
 }

@@ -29,6 +29,15 @@ namespace Makanak.Presentation.Controllers.Admin
             return Success("User status updated successfully");
         }
 
+        [HttpPut("properties/status")]
+        public async Task<IActionResult> UpdatePropertyStatus([FromBody] UpdatePropertyStatusDto dto)
+        {
+            var res = await serviceManager.AdminService.UpdatePropertyStatus(dto);
+            if (!res) return BadRequest("Failed to update Property status");
+
+            return Success("Property status updated successfully");
+        }
+
         [HttpGet("users/{userId}/verification-details")]
         public async Task<IActionResult> GetUserVerificationDetails([FromRoute] string userId)
         {
