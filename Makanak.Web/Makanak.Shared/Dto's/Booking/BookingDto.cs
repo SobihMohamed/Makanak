@@ -18,6 +18,7 @@ namespace Makanak.Shared.Dto_s.Booking
         public decimal TotalPrice { get; set; } // 3000
         public decimal CommissionPaid { get; set; } // 300
         public decimal AmountToPayToOwner { get; set; } // 2700
+
         // Property Info (Basic)
         public int PropertyId { get; set; }
         public string PropertyName { get; set; }

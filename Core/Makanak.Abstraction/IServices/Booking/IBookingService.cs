@@ -1,4 +1,5 @@
 ﻿using Makanak.Shared.Dto_s.Booking;
+using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
 using System;
 using System.Collections.Generic;
@@ -20,9 +21,12 @@ namespace Makanak.Abstraction.IServices.Booking
 
         Task<bool> CancelBookingAsync(int bookingId, string userId, string role);
 
-        Task<bool> ScanQrCodeAsync(string qrCode, string ownerId);
+        Task<ScanQrResponseDto> ScanQrCodeAsync(string qrCode, string ownerId);
 
-        Task<bool> UpdateBookingStatusAsync(int bookingId, BookingStatus newStatus);
+        Task<bool> UpdateBookingStatusAsync(int bookingId, BookingStatus newStatus, string userId, string role);
 
+        Task<BookingPaymentDto> CreateBookingPaymentAsync(int bookingId, string UserId);
+
+        Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus);
     }
 }

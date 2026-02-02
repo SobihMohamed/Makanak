@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices.Booking;
+using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.EnumsHelper.User;
 using Makanak.Domain.Exceptions;
@@ -7,9 +8,11 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Shared.Dto_s.Booking;
+using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.EnumsHelper.Property;
 using Microsoft.AspNetCore.Identity;
@@ -18,7 +21,8 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Makanak.Services.Services.BookingImplement
 {
-    public class BookingService(IUnitOfWork unitOfWork, IMapper mapper , UserManager<ApplicationUser> userManager) : IBookingService
+    public class BookingService(IPaymentService paymentService, IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager)
+        : IBookingService
     {
         public async Task<BookingDetailDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
         {
@@ -88,7 +92,7 @@ namespace Makanak.Services.Services.BookingImplement
             booking.CommissionPaid = commissionAmount;
             booking.AmountToPayToOwner = amountToOwner;
 
-            booking.Status = BookingStatus.PendingPayment;
+            booking.Status = BookingStatus.PendingOwnerApproval;
             booking.CheckInQrCode = Guid.NewGuid().ToString();
             booking.IsQrScanned = false;
 
@@ -97,6 +101,8 @@ namespace Makanak.Services.Services.BookingImplement
             bookingRepo.AddAsync(booking);
 
             var result = await unitOfWork.SaveChangesAsync();
+            
+            // email to owner
 
             if (result <= 0)
                 throw new Exception("Failed to create booking.");
@@ -163,7 +169,7 @@ namespace Makanak.Services.Services.BookingImplement
             return count == 0;
         }
 
-        public async Task<bool> ScanQrCodeAsync(string qrCode, string ownerId)
+        public async Task<ScanQrResponseDto> ScanQrCodeAsync(string qrCode, string ownerId)
         {
             // generate specification
             var spec = new ScanningQrBookingSpecification(qrCode);
@@ -186,17 +192,16 @@ namespace Makanak.Services.Services.BookingImplement
                 throw new BadRequestException("This QR code has already been scanned.");
 
             // time check 
-            if (DateTime.Today < booking.CheckInDate.Date || DateTime.Now.Date > booking.CheckOutDate.Date)
-                throw new BadRequestException("QR code can only be scanned on the check-in or check-out date.");
+            //if (DateTime.Today < booking.CheckInDate.Date || DateTime.Now.Date > booking.CheckOutDate.Date)
+            //    throw new BadRequestException("QR code can only be scanned on the check-in or check-out date.");
 
             booking.IsQrScanned = true;
             booking.Status = BookingStatus.CheckedIn;
 
             bookingRepo.Update(booking);
-            var result = await unitOfWork.SaveChangesAsync();
-            if (result <= 0)
-                throw new Exception("Failed to scan QR code.");
-            return result > 0;
+            await unitOfWork.SaveChangesAsync();
+
+            return mapper.Map<ScanQrResponseDto>(booking);
         }
   
         public async Task<bool> CancelBookingAsync(int bookingId, string userId, string role)
@@ -217,16 +222,23 @@ namespace Makanak.Services.Services.BookingImplement
             if(userId != booking.TenantId && userId != booking.OwnerId && role != "Admin")
                 throw new UnauthorizedAccessException("You do not have permission to cancel this booking.");
 
-            // business rule: only pending or confirmed bookings can be canceled
-            if(booking.Status != BookingStatus.PendingPayment && booking.Status != BookingStatus.Confirmed)
-                throw new BadRequestException("Only bookings with status 'Pending Payment' or 'Confirmed' can be canceled.");
+            //   أي حالة قبل السكن ينفع تتلغي (طلب موافقة، مستني دفع، أو اندفع فعلاً
+            var cancellableStatuses = new[] {
+                BookingStatus.PendingOwnerApproval,
+                BookingStatus.PendingPayment,
+                BookingStatus.PaymentReceived 
+            };
 
-            // so we need to send mony back to tenant if the booking is completed
-            if (booking.Status == BookingStatus.Confirmed)
+            if (!cancellableStatuses.Contains(booking.Status))
+                throw new BadRequestException("Only bookings that are not checked-in or completed can be canceled.");
+
+            //   لو الحالة PaymentReceived، لازم نرجع الفلوس (Refund)
+            if (booking.Status == BookingStatus.PaymentReceived)
             {
-                // initiate refund process here => stripe 
+                // هنا هتحط كود الـ Stripe Refund لاحقاً
                 booking.IsRefunded = true;
             }
+
             booking.Status = BookingStatus.Cancelled;
             booking.CancellationReason = "Cancelled by " + (userId == booking.TenantId ? "Tenant" : "Owner");
 
@@ -235,14 +247,19 @@ namespace Makanak.Services.Services.BookingImplement
             return result > 0;
         }
 
-        public async Task<bool> UpdateBookingStatusAsync(int bookingId, BookingStatus newStatus)
+        public async Task<bool> UpdateBookingStatusAsync(int bookingId, BookingStatus newStatus, string userId, string role)
         {
             var spec = new BookingSpecifications(bookingId);
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
             var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
 
-            if (booking == null)
-                throw new BookingNotFound(bookingId); 
+            if (booking == null) throw new BookingNotFound(bookingId);
+
+            if (booking.Property.OwnerId != userId && role != "Admin")
+                throw new UnauthorizedAccessException("You don't have permission to update this booking.");
+
+            if (newStatus == BookingStatus.PendingPayment && booking.Status != BookingStatus.PendingOwnerApproval)
+                throw new BadRequestException("You can only approve bookings that are pending your approval.");
 
             booking.Status = newStatus;
 
@@ -255,5 +272,68 @@ namespace Makanak.Services.Services.BookingImplement
             var result = await unitOfWork.SaveChangesAsync();
             return result > 0;
         }
+
+        public async Task<BookingPaymentDto> CreateBookingPaymentAsync(int bookingId, string UserId)
+        {
+            // get booking repo 
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+
+            //get booking 
+            var booking = await bookingRepo.GetByIdAsync(bookingId);
+
+            if (booking == null) throw new BookingNotFound(bookingId);
+
+            // check user 
+            if(booking.TenantId != UserId)
+                throw new UnauthorizedAccessException("You do not have permission to pay for this booking.");
+
+            // comission only paied online
+            var amountToPay = booking.CommissionPaid;
+
+            // chcek on booking status 
+            if (booking.Status != BookingStatus.PendingPayment)
+                throw new BadRequestException("You cannot pay for this booking until the owner approves it.");
+
+            // call payment service to send intent id old exist
+            var paymentDto = await paymentService.CreateOrUpdatePaymentIntent(booking.PaymentIntentId!, amountToPay);
+            
+            paymentDto.BookingId = booking.Id;       
+            paymentDto.Status = booking.Status.ToString(); 
+            
+            booking.PaymentIntentId = paymentDto.PaymentIntentId;
+            booking.ClientSecret = paymentDto.ClientSecret;
+
+            bookingRepo.Update(booking);
+            await unitOfWork.SaveChangesAsync();
+
+            return paymentDto;
+        }
+
+        public async Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus)
+        {
+            // generate specification
+            var spec = new BookingPaymentSpecififcations(paymentIntentId);
+
+            // get repo 
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+
+            // get booking with specification
+            var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
+        
+            if (booking == null)
+                throw new BookingNotFoundByPaymentIntentId(paymentIntentId);
+
+            booking.Status = newStatus;
+
+            // if new status is completed , set IsQrScanned to true
+            if (newStatus == BookingStatus.Completed)
+                booking.IsQrScanned = true;
+
+            bookingRepo.Update(booking);
+            var result = await unitOfWork.SaveChangesAsync();
+            return result > 0;
+        }
+
+        
     }
 }

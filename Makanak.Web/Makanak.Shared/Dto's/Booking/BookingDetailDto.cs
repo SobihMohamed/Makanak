@@ -8,8 +8,6 @@ namespace Makanak.Shared.Dto_s.Booking
     {
         // Money Details
         public decimal PricePerNight { get; set; }
-        public decimal CommissionPaid { get; set; }
-        public decimal AmountToPayToOwner { get; set; }
 
         // Full Images
         public List<string>? GalleryImages { get; set; }
@@ -22,6 +20,9 @@ namespace Makanak.Shared.Dto_s.Booking
         public string? CheckInQrCode { get; set; } // بيظهر هنا بس
         public bool IsQrScanned { get; set; }
 
-        public string OwnerId { get; set; } // محتاجينها هنا عشان المحادثة مثلاً
+        // Sensitive Data (Locked until paid) 🔒
+        public string? OwnerPhoneNumber { get; set; }
+        public string? CheckInInstructions { get; set; }
+        public string? ExactLocationUrl { get; set; }
     }
 }

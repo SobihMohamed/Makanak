@@ -1,6 +1,9 @@
 ﻿using Makanak.Abstraction.IServices.Booking;
 using Makanak.Abstraction.IServices.Manager;
 using Makanak.Shared.Dto_s.Booking;
+using Makanak.Shared.Dto_s.Payment;
+using Makanak.Shared.EnumsHelper.Booking;
+using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -71,27 +74,42 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
         [Authorize(Roles = "Owner")]
         [HttpPost("scan-qr")]
-        public async Task<IActionResult> ScanQrCode([FromBody] ScanQrRequestDto request)
+        public async Task<IActionResult> ScanQrCode([FromBody] ScanQrRequestDto scanQrRequestDto)
         {
             var ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var result = await serviceManager.BookingService.ScanQrCodeAsync(request.QrCode, ownerId);
+            var result = await serviceManager.BookingService.ScanQrCodeAsync(scanQrRequestDto.QrCode, ownerId!);
 
-            if (!result) return BadRequestError("Failed to scan QR Code or code invalid");
 
-            return Success("Check-in successful! ✅");
+            return Success(result, "Check-in completed successfully! You can hand over the keys now.");
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPut("update-status")]
-        public async Task<IActionResult> UpdateStatus(UpdateBookingStatusDto dto)
+        [Authorize(Roles = "Owner, Admin")]
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, UpdateBookingStatusDto updateBookingStatusDto)
         {
-            // مش محتاجين Enum Parsing لأن الـ DTO مظبوط
-            var res =  await serviceManager.BookingService.UpdateBookingStatusAsync(dto.BookingId, dto.Status);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var role = User.FindFirstValue(ClaimTypes.Role);
 
-            if (!res) return BadRequest("Failed to update booking status");
+            var success = await serviceManager.BookingService.UpdateBookingStatusAsync(id, updateBookingStatusDto.Status, userId!, role!);
 
-            return Success("Status updated successfully");
+            if (!success) return BadRequestError("Update failed.");
+
+            return Success($"Booking status updated to {updateBookingStatusDto.Status} successfully.");
+        }
+
+        [Authorize(Roles = "Tenant")]
+        [HttpPost("{bookingId}/payment")]
+        public async Task<IActionResult> CreateOrUpdatePaymentIntent(int bookingId)
+        {
+            var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var result = await serviceManager.BookingService.CreateBookingPaymentAsync(bookingId , UserId!);
+
+            if (result == null)
+                return BadRequestError("Problem creating payment intent");
+
+            return Success(result, "Payment Created Successfully");
         }
     }
 }

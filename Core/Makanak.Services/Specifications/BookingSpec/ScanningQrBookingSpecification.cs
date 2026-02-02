@@ -11,10 +11,11 @@ namespace Makanak.Services.Specifications.BookingSpec
         public ScanningQrBookingSpecification(string QrCode)
             : base(b =>
                 b.CheckInQrCode == QrCode &&
-                b.Status == BookingStatus.Confirmed
+                b.Status == BookingStatus.PaymentReceived
             )
         {
-            
+            AddInclude(b => b.Property);
+            AddInclude(b => b.Tenant);
         }
     }
 }

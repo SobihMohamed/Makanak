@@ -4,6 +4,7 @@ using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Booking;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
@@ -11,9 +12,12 @@ using Makanak.Domain.Models.Identity;
 using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
 using Makanak.Services.Services.BookingImplement;
+using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Services.PropertyImplement;
+using Makanak.Shared.Common.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,9 +32,12 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IAdminServices> _adminService;
         private readonly Lazy<IPropertyService> _propertyService;
         private readonly Lazy<IBookingService> _bookingService;
+        private readonly Lazy<IPaymentService> _paymentService;
         public ServiceManager(IUnitOfWork _Uow,IMapper mapper,
             IConfiguration configuration,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IOptions<StripeSettings> options
+            )
         {
             _emailService = new Lazy<IEmailService>(() => new EmailServices(configuration));
 
@@ -49,7 +56,8 @@ namespace Makanak.Services.Services.ManagerImplement
             
             _propertyService = new Lazy<IPropertyService>(() => new PropertyService(mapper,AttachementServices, _Uow));
 
-            _bookingService = new Lazy<IBookingService>(() => new BookingService(_Uow, mapper , userManager));
+            _paymentService = new Lazy<IPaymentService> (() => new PaymentServices(options));
+            _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager));
         }
         public IEmailService EmailService => _emailService.Value;
         public IAttachementServices AttachementServices => _attachementServices.Value;
@@ -57,6 +65,7 @@ namespace Makanak.Services.Services.ManagerImplement
         public IAdminServices AdminService => _adminService.Value;
 
         public IPropertyService PropertyServices => _propertyService.Value;
+        public IPaymentService PaymentService => _paymentService.Value;
         public IBookingService BookingService=> _bookingService.Value;
     }
 }

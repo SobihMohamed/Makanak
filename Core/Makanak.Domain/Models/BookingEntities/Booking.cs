@@ -35,12 +35,14 @@ namespace Makanak.Domain.Models.BookingEntities
 
         public int NumberOfGuests { get; set; }
         public string? SpecialRequests { get; set; } // "ملاحظات إضافية"
+        
         public string? PaymentIntentId { get; set; } // رقم عملية الدفع
-
+        public string? ClientSecret { get; set; }
 
         public int PropertyId { get; set; }
         public virtual Property Property { get; set; } = null!;
 
+       
         public string TenantId { get; set; } = null!;
         public virtual ApplicationUser Tenant { get; set; } = null!;
 
