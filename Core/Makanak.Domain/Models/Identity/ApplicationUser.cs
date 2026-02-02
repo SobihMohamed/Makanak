@@ -6,11 +6,7 @@ using Makanak.Domain.Models.NotifyEnities;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Domain.Models.ReviewEntities;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Makanak.Domain.Models.Identity
 {
@@ -32,6 +28,7 @@ namespace Makanak.Domain.Models.Identity
 
         #endregion
         public int StrikeCount { get; set; } = 0;
+        public decimal NegativeBalance { get; set; } = 0;
         // User type : Tenant, Owner, Admin
         public UserTypes UserType { get; set; }
         // User status : Pending, Active, Rejected, Banned
