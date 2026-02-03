@@ -27,7 +27,7 @@ namespace Makanak.Persistance.Configurations
             builder.HasOne(r => r.Property)
                 .WithMany(p=>p.Reviews)
                 .HasForeignKey(r =>r.PropertyId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             // tenant can write many reviews
             builder.HasOne(r => r.Tenant)
