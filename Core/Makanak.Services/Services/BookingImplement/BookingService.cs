@@ -8,7 +8,6 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
-using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Shared.Dto_s.Booking;
@@ -17,11 +16,10 @@ using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.EnumsHelper.Property;
 using Microsoft.AspNetCore.Identity;
 
-
-
 namespace Makanak.Services.Services.BookingImplement
 {
-    public class BookingService(IPaymentService paymentService, IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager)
+    public class BookingService(IPaymentService paymentService, IUnitOfWork unitOfWork, IMapper mapper, 
+        UserManager<ApplicationUser> userManager)
         : IBookingService
     {
         public async Task<BookingDetailDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
@@ -260,7 +258,12 @@ namespace Makanak.Services.Services.BookingImplement
 
             if (newStatus == BookingStatus.PendingPayment && booking.Status != BookingStatus.PendingOwnerApproval)
                 throw new BadRequestException("You can only approve bookings that are pending your approval.");
-
+            
+            
+            if (newStatus == BookingStatus.PendingPayment)
+            {
+                booking.PaymentDeadline = DateTime.UtcNow.AddMinutes(30);
+            }
             booking.Status = newStatus;
 
             if (newStatus == BookingStatus.Completed)
@@ -286,6 +289,17 @@ namespace Makanak.Services.Services.BookingImplement
             // check user 
             if(booking.TenantId != UserId)
                 throw new UnauthorizedAccessException("You do not have permission to pay for this booking.");
+
+            if (booking.PaymentDeadline.HasValue && booking.PaymentDeadline.Value < DateTime.UtcNow)
+            {
+                booking.Status = BookingStatus.Cancelled;
+                booking.CancellationReason = "Payment time expired (Auto-Cancelled).";
+                
+                bookingRepo.Update(booking);
+                await unitOfWork.SaveChangesAsync();
+
+                throw new BadRequestException("Time expired! You missed the payment window.");
+            }
 
             // comission only paied online
             var amountToPay = booking.CommissionPaid;
@@ -332,8 +346,6 @@ namespace Makanak.Services.Services.BookingImplement
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
             return result > 0;
-        }
-
-        
+        }      
     }
 }

@@ -39,6 +39,9 @@ namespace Makanak.Domain.Models.BookingEntities
         public string? PaymentIntentId { get; set; } // رقم عملية الدفع
         public string? ClientSecret { get; set; }
 
+        public DateTime? PaymentDeadline { get; set; }
+
+
         public int PropertyId { get; set; }
         public virtual Property Property { get; set; } = null!;
 
