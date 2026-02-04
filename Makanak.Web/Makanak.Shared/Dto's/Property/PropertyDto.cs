@@ -12,7 +12,9 @@ namespace Makanak.Shared.Dto_s.Property
         public decimal PricePerNight { get; set; }
         public string GovernorateName { get; set; } = null!;
         public string PropertyStatus { get; set; } = null!; 
-        public string PropertyType { get; set; } = null!;   
+        public string PropertyType { get; set; } = null!;
+        public double AverageRating { get; set; }
+
         public DateTime CreatedAt { get; set; }
         public bool IsAvailable { get; set; }
     }

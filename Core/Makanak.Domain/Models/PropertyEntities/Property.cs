@@ -21,6 +21,7 @@ namespace Makanak.Domain.Models.PropertyEntities
         public int Bedrooms { get; set; }
         public int Bathrooms{ get; set; }
         public int MaxGuests { get; set; }
+        public double AverageRating { get; set; }
         public bool IsAvailable { get; set; } = true;
         
         public PropertyType PropertyType { get; set; }

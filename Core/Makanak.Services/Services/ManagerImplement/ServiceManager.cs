@@ -6,7 +6,7 @@ using Makanak.Abstraction.IServices.Booking;
 using Makanak.Abstraction.IServices.Manager;
 using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Abstraction.IServices.PropertyService;
-using Makanak.Domain.Contracts.Repos;
+using Makanak.Abstraction.IServices.ReviewService;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Models.Identity;
 using Makanak.Services.Services.Admin;
@@ -14,13 +14,12 @@ using Makanak.Services.Services.Auth;
 using Makanak.Services.Services.BookingImplement;
 using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Services.PropertyImplement;
+using Makanak.Services.Services.ReviewImplement;
 using Makanak.Shared.Common.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace Makanak.Services.Services.ManagerImplement
 {
@@ -33,6 +32,7 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IPropertyService> _propertyService;
         private readonly Lazy<IBookingService> _bookingService;
         private readonly Lazy<IPaymentService> _paymentService;
+        private readonly Lazy<IReviewService> _reviewService;
         public ServiceManager(IUnitOfWork _Uow,IMapper mapper,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
@@ -57,7 +57,11 @@ namespace Makanak.Services.Services.ManagerImplement
             _propertyService = new Lazy<IPropertyService>(() => new PropertyService(mapper,AttachementServices, _Uow));
 
             _paymentService = new Lazy<IPaymentService> (() => new PaymentServices(options));
+
             _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager));
+            
+            _reviewService = new Lazy<IReviewService>(() => new ReviewService(_Uow, mapper));
+            
         }
         public IEmailService EmailService => _emailService.Value;
         public IAttachementServices AttachementServices => _attachementServices.Value;
@@ -67,5 +71,6 @@ namespace Makanak.Services.Services.ManagerImplement
         public IPropertyService PropertyServices => _propertyService.Value;
         public IPaymentService PaymentService => _paymentService.Value;
         public IBookingService BookingService=> _bookingService.Value;
+        public IReviewService ReviewService=> _reviewService.Value;
     }
 }

@@ -18,8 +18,9 @@ namespace Makanak.Shared.Dto_s.Property
         public string Address { get; set; } = null!;
         public string PropertyStatus { get; set; } = null!;
         public string PropertyType { get; set; } = null!;
+        public double AverageRating { get; set; }
 
-        
+
         public string GovernorateName { get; set; } = null!;
         public string AreaName { get; set; } = null!;
 
