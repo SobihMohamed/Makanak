@@ -21,6 +21,7 @@ using Makanak.Services.AutoMapper.User;
 using Makanak.Services.Services;
 using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
+using Makanak.Services.Services.BackgroundServices;
 using Makanak.Services.Services.ManagerImplement;
 using Makanak.Shared.Common.Settings;
 using Makanak.Web.Middleware;
@@ -73,7 +74,10 @@ namespace Makanak.Web
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IServiceManager, ServiceManager>();
             builder.Services.AddScoped<IDbInitializer, DbInitialized>();
+
             builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+            // background service
+            builder.Services.AddHostedService<BookingStatusWorker>();
             #endregion
 
             #region JWT Configuration

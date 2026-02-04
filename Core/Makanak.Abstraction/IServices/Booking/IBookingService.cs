@@ -28,5 +28,7 @@ namespace Makanak.Abstraction.IServices.Booking
         Task<BookingPaymentDto> CreateBookingPaymentAsync(int bookingId, string UserId);
 
         Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus);
+
+        Task ProcessAutomatedStatusesAsync();
     }
 }

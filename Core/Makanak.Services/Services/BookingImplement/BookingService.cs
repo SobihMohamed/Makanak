@@ -346,6 +346,43 @@ namespace Makanak.Services.Services.BookingImplement
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
             return result > 0;
-        }      
+        }
+
+        public async Task ProcessAutomatedStatusesAsync()
+        {
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+          
+            // 1️ End Check-in Bookings Aftre CheckOut date
+            var completedSpec = new ExpiredBookingSpecifications();
+            var bookingsToComplete = await bookingRepo.GetAllWithSpecificationAsync(completedSpec);
+
+            if (bookingsToComplete.Any())
+            {
+                foreach (var booking in bookingsToComplete)
+                {
+                    booking.Status = BookingStatus.Completed;
+                    bookingRepo.Update(booking);
+                }
+            }
+
+            // 2️ Cancelled any pending payment booking after exceeds the deadline
+            var pendingSpec = new PendingPaymentExpiredSpecifications();
+            var bookingsToCancel = await bookingRepo.GetAllWithSpecificationAsync(pendingSpec);
+
+            if (bookingsToCancel.Any())
+            {
+                foreach (var booking in bookingsToCancel)
+                {
+                    booking.Status = BookingStatus.Cancelled;
+                    booking.CancellationReason = "Auto-Cancelled: Payment deadline expired.";
+                    bookingRepo.Update(booking);
+                }
+            }
+
+            if (bookingsToComplete.Any() || bookingsToCancel.Any())
+            {
+                await unitOfWork.SaveChangesAsync();
+            }
+        }
     }
 }
