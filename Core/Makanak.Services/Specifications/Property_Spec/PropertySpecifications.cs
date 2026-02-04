@@ -3,6 +3,7 @@ using Makanak.Domain.Contracts.Specifications;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Property_Params;
+using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.EnumsHelper.Property;
 
 
@@ -32,7 +33,8 @@ namespace Makanak.Services.Specifications.Property_Spec
             (p =>
                 // main constant filters
                 (p.PropertyStatus == PropertyStatus.Accepted) &&
-                (p.IsDeleted == false) && (p.IsAvailable == true)
+                (!p.IsDeleted) &&
+                (p.IsAvailable)
                     &&
                 // Hard filters
                 (string.IsNullOrEmpty(propertyParams.Search) ||
@@ -42,9 +44,18 @@ namespace Makanak.Services.Specifications.Property_Spec
                 (!propertyParams.GovernorateId.HasValue || p.GovernorateId == propertyParams.GovernorateId)
                     &&
                 (!propertyParams.Type.HasValue || p.PropertyType == propertyParams.Type)
-                    //&&
+                    &&
                 //price limit is doubled to include more properties for ranking
-                //(!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice * 2)   
+                (!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice * 2)  
+                    &&
+                (
+                    !propertyParams.CheckInDate.HasValue || !propertyParams.CheckOutDate.HasValue ||
+                    !p.Bookings.Any(b =>
+                        (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.PaymentReceived || b.Status == BookingStatus.CheckedIn)
+                          &&
+                        (b.CheckInDate < propertyParams.CheckOutDate && b.CheckOutDate > propertyParams.CheckInDate)
+                )
+        )
             )
         {
             if (!isCount)
@@ -52,6 +63,7 @@ namespace Makanak.Services.Specifications.Property_Spec
                 AddInclude(p => p.PropertyImages);
                 AddInclude(p => p.Governorate);
                 AddInclude(p => p.Amenities);
+
                 // Pagenation
                 ApplyPagenation(propertyParams.PageSize, propertyParams.PageIndex);
 

@@ -19,6 +19,9 @@ namespace Makanak.Shared.Common.Params.Property_Params
 
         public double? MaxDistance { get; set; } = 50; // km 
 
+        public DateTime? CheckInDate { get; set; }
+        public DateTime? CheckOutDate { get; set; }
+
         public int? MinBedrooms { get; set; }
         public int? MinMaxGuests { get; set; }
 
