@@ -17,10 +17,15 @@ namespace Makanak.Persistance.Configurations
             builder.Property(n => n.Title).IsRequired().HasMaxLength(200);
             builder.Property(n => n.Message).IsRequired().HasMaxLength(1000);
             builder.Property(n => n.NotificationType).HasConversion<string>();
+
             builder.HasOne(n=>n.ApplicationUser)
                      .WithMany(u=>u.Notifications)
                      .HasForeignKey(n=>n.UserId)
-                     .OnDelete(DeleteBehavior.NoAction);
+                     .OnDelete(DeleteBehavior.Cascade);
+
+            // indexes to optimization search
+            builder.HasIndex(n => n.UserId); 
+            builder.HasIndex(n => n.IsRead); 
         }
     }
 }

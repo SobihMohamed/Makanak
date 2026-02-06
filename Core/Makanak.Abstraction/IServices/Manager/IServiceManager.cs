@@ -1,6 +1,7 @@
 ﻿using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Booking;
+using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Abstraction.IServices.ReviewService;
@@ -20,5 +21,7 @@ namespace Makanak.Abstraction.IServices.Manager
         IPaymentService PaymentService { get; }
         IBookingService BookingService{  get; }
         IReviewService ReviewService { get; }
+
+        INotificationService NotificationService { get; }
     }
 }

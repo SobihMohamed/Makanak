@@ -14,13 +14,11 @@ using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper;
 using Makanak.Services.AutoMapper.Admin;
 using Makanak.Services.AutoMapper.BookingMapper;
+using Makanak.Services.AutoMapper.NotificationMapper;
 using Makanak.Services.AutoMapper.PropertyMapper;
 using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Services.AutoMapper.ReviewMapper;
 using Makanak.Services.AutoMapper.User;
-using Makanak.Services.Services;
-using Makanak.Services.Services.Admin;
-using Makanak.Services.Services.Auth;
 using Makanak.Services.Services.BackgroundServices;
 using Makanak.Services.Services.ManagerImplement;
 using Makanak.Shared.Common.Settings;
@@ -61,6 +59,7 @@ namespace Makanak.Web
                 cfg.AddProfile(new PropertyProfile());
                 cfg.AddProfile(new BookingProfile());
                 cfg.AddProfile(new ReviewProfile());
+                cfg.AddProfile(new NotificationProfile());
             });
             // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));

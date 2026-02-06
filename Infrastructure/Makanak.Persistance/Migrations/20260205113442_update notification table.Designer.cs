@@ -4,6 +4,7 @@ using Makanak.Persistance.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Makanak.Persistance.Migrations
 {
     [DbContext(typeof(MakanakDbContext))]
-    partial class MakanakDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260205113442_update notification table")]
+    partial class updatenotificationtable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -415,7 +418,7 @@ namespace Makanak.Persistance.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SenderId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -432,8 +435,6 @@ namespace Makanak.Persistance.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IsRead");
-
-                    b.HasIndex("SenderId");
 
                     b.HasIndex("UserId");
 
@@ -935,10 +936,6 @@ namespace Makanak.Persistance.Migrations
 
             modelBuilder.Entity("Makanak.Domain.Models.NotifyEnities.Notification", b =>
                 {
-                    b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId");
-
                     b.HasOne("Makanak.Domain.Models.Identity.ApplicationUser", "ApplicationUser")
                         .WithMany("Notifications")
                         .HasForeignKey("UserId")
@@ -946,8 +943,6 @@ namespace Makanak.Persistance.Migrations
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
-
-                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("Makanak.Domain.Models.PropertyEntities.Property", b =>

@@ -10,10 +10,24 @@ namespace Makanak.Domain.EnumsHelper.Notification
 {
     public enum NotificationType
     {
-        General = 1,
-        AccountAlert = 2,
-        BookingRequest = 3,
-        BookingStatus = 4,
-        PaymentReminder = 5,
+        // --- 1. System & Account ---
+        General = 1,            // إشعار عام من الأدمن للكل
+        AccountAlert = 2,       // تغيير باسورد، دخول من جهاز جديد
+
+        // --- 2. Booking Cycle  ---
+        BookingRequest = 3,     
+        BookingApproved = 4,    
+        BookingCancelled = 5,   
+        BookingCompleted = 6,   
+
+        // --- 3. Payment Cycle (Instapay & Manual) ---
+        PaymentReminder = 7,       
+        PaymentReceiptUploaded = 8, 
+        PaymentApproved = 9,       
+        PaymentRejected = 10,       
+
+        // --- 4. Trust & Safety (Disputes) ---
+        DisputeOpened = 11,     
+        DisputeResolved = 12    
     }
 }
