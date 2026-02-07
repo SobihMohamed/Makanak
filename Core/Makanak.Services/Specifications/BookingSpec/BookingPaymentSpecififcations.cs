@@ -10,7 +10,9 @@ namespace Makanak.Services.Specifications.BookingSpec
         public BookingPaymentSpecififcations(string PaymentIntentId)
             :base(b=> b.PaymentIntentId == PaymentIntentId)
         {
-            
+            AddInclude(b => b.Tenant);
+            AddInclude(b => b.Property);
+            AddInclude(b => b.Owner);
         }
     }
 }

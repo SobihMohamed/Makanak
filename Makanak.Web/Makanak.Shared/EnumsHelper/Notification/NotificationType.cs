@@ -18,16 +18,19 @@ namespace Makanak.Domain.EnumsHelper.Notification
         BookingRequest = 3,     
         BookingApproved = 4,    
         BookingCancelled = 5,   
-        BookingCompleted = 6,   
+        BookingCompleted = 6,
+        BookingRejected = 7,
+        BookingConfirmed =8,
 
         // --- 3. Payment Cycle (Instapay & Manual) ---
-        PaymentReminder = 7,       
-        PaymentReceiptUploaded = 8, 
-        PaymentApproved = 9,       
-        PaymentRejected = 10,       
+        PaymentReminder = 8,       
+        PaymentReceiptUploaded = 9, 
+        PaymentApproved = 10,       
+        PaymentRejected = 11,
+        PaymentFailed = 12,
 
         // --- 4. Trust & Safety (Disputes) ---
-        DisputeOpened = 11,     
-        DisputeResolved = 12    
+        DisputeOpened = 12,     
+        DisputeResolved = 13    
     }
 }

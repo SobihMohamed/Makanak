@@ -7,8 +7,6 @@ using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.NotifyEnities;
 using Makanak.Services.Specifications.NotificationSpec;
 using Makanak.Shared.Dto_s.Notification;
-using System.Reflection;
-using System.Windows.Markup;
 
 namespace Makanak.Services.Services.NotificationImplement
 {

@@ -13,7 +13,8 @@ namespace Makanak.Services.Specifications.BookingSpec
                 (b.Status == BookingStatus.CheckedIn || b.Status == BookingStatus.PaymentReceived)
             )
         {
-            
+            AddInclude(b => b.Tenant);  
+            AddInclude(b => b.Property);
         }
     }
 }

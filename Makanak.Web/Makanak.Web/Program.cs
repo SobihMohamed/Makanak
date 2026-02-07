@@ -2,11 +2,14 @@ using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Abstraction.IServices.RealTimeNotifier;
 using Makanak.Domain.Contracts.InitializerDB;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Persistance.Extensions;
+using Makanak.Persistance.Hubs;
 using Makanak.Persistance.Implements.InitializerImplement;
+using Makanak.Persistance.Implements.RealTimeNotifications;
 using Makanak.Persistance.Implements.ReposImplement;
 using Makanak.Persistance.Implements.UOW;
 using Makanak.Persistance.ProgramServices;
@@ -65,6 +68,22 @@ namespace Makanak.Web
             builder.Services.AddTransient(typeof(UrlResolver<,>));
             #endregion
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", policy =>
+                {
+                    policy.AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials() // SignalR
+                          .WithOrigins(
+                          "http://localhost:4200", // Angular Default
+                          "http://localhost:3000", // React Default
+                          "http://localhost:5173", // Vite/Vue Default
+                          "http://localhost:5500"  // VS Code Live Server (?? ????? HTML/JS ???)
+                      );
+                });
+            });
+
             #region DB Connections
             builder.Services.AddPersistenceServices(builder.Configuration);
             #endregion
@@ -73,6 +92,8 @@ namespace Makanak.Web
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IServiceManager, ServiceManager>();
             builder.Services.AddScoped<IDbInitializer, DbInitialized>();
+            builder.Services.AddSignalR();
+            builder.Services.AddScoped<IRealTimeNotifier, SignalRNotifier>();
 
             builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
             // background service
@@ -102,6 +123,24 @@ namespace Makanak.Web
 
                     ClockSkew = TimeSpan.Zero // to avoid delay in token expiration time
                 };
+                // Signal-R
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        // 1. ??? ??? ?????? ?? ??? Query String
+                        var accessToken = context.Request.Query["access_token"];
+
+                        // 2. ??? ??????? ?? ?? ???? ??? Hub ???????
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notify"))
+                        {
+                            // 3. ?? ????? ?? ?????? ?? ??? Query ????? ??? Context ???? ???? Validate
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
             #endregion
 
@@ -123,6 +162,8 @@ namespace Makanak.Web
 
             app.UseRouting();
 
+            app.UseCors("CorsPolicy");
+
             app.UseAuthentication();
 
             app.UseAuthorization();
@@ -130,6 +171,8 @@ namespace Makanak.Web
             app.UseStaticFiles();
 
             app.MapControllers();
+
+            app.MapHub<NotificationHub>("/notify");
 
             app.Run();
             #endregion

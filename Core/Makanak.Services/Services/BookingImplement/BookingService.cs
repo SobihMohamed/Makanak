@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices.Booking;
+using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.EnumsHelper.User;
@@ -14,12 +15,13 @@ using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.EnumsHelper.Property;
+using Makanak.Shared.HelpersFactory;
 using Microsoft.AspNetCore.Identity;
 
 namespace Makanak.Services.Services.BookingImplement
 {
     public class BookingService(IPaymentService paymentService, IUnitOfWork unitOfWork, IMapper mapper, 
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager, INotificationService notificationService)
         : IBookingService
     {
         public async Task<BookingDetailDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
@@ -99,8 +101,10 @@ namespace Makanak.Services.Services.BookingImplement
             bookingRepo.AddAsync(booking);
 
             var result = await unitOfWork.SaveChangesAsync();
-            
-            // email to owner
+
+            await notificationService.SendNotificationAsync(
+                NotificationFactory.BookingRequest(booking.OwnerId, user.Name, property.Title ,booking.Id)
+            );
 
             if (result <= 0)
                 throw new Exception("Failed to create booking.");
@@ -238,10 +242,22 @@ namespace Makanak.Services.Services.BookingImplement
             }
 
             booking.Status = BookingStatus.Cancelled;
-            booking.CancellationReason = "Cancelled by " + (userId == booking.TenantId ? "Tenant" : "Owner");
 
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
+            if (result > 0)
+            {
+                string targetId = (userId == booking.TenantId) ? booking.OwnerId : booking.TenantId;
+                string cancelledBy = (userId == booking.TenantId) ? "Tenant" : "Owner";
+
+                if (role == "Admin") cancelledBy = "Admin";
+                booking.CancellationReason = cancelledBy;
+
+
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.BookingCancelled(targetId, cancelledBy, booking.Id)
+                );
+            }
             return result > 0;
         }
 
@@ -273,6 +289,23 @@ namespace Makanak.Services.Services.BookingImplement
 
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
+            if (result > 0)
+            {
+                if (newStatus == BookingStatus.PendingPayment)
+                {
+                    // المالك وافق -> ابعت للمستأجر عشان يدفع
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.BookingApprovedForPayment(booking.TenantId, booking.Property.Title, booking.Id)
+                    );
+                }
+                else if (newStatus == BookingStatus.RejectedByOwner)
+                {
+                    // المالك رفض -> ابعت للمستأجر
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.BookingRejected(booking.TenantId, booking.Property.Title, booking.Id)
+                    );
+                }
+            }
             return result > 0;
         }
 
@@ -345,14 +378,31 @@ namespace Makanak.Services.Services.BookingImplement
 
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
+
+            if (result > 0 && newStatus == BookingStatus.PaymentReceived)
+            {
+                // 1. إشعار للمستأجر: مبروك، خد العنوان والتفاصيل
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.PaymentSuccess_ToTenant(booking.TenantId, booking.Property.Title, booking.Id)
+                );
+
+                // 2. إشعار للمالك: فيه فلوس وحجز اتأكد
+                // (تأكد إن الـ Spec محملة بيانات الـ TenantName)
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.PaymentSuccess_ToOwner(booking.OwnerId, booking.Tenant.Name, booking.Id)
+                );
+            }
+
             return result > 0;
         }
 
         public async Task ProcessAutomatedStatusesAsync()
         {
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-          
-            // 1️ End Check-in Bookings Aftre CheckOut date
+
+            // 
+            // (Completed)
+
             var completedSpec = new ExpiredBookingSpecifications();
             var bookingsToComplete = await bookingRepo.GetAllWithSpecificationAsync(completedSpec);
 
@@ -360,12 +410,24 @@ namespace Makanak.Services.Services.BookingImplement
             {
                 foreach (var booking in bookingsToComplete)
                 {
-                    booking.Status = BookingStatus.Completed;
-                    bookingRepo.Update(booking);
+                    try
+                    {
+                        booking.Status = BookingStatus.Completed;
+                        bookingRepo.Update(booking); 
+
+                        await notificationService.SendNotificationAsync(
+                            NotificationFactory.BookingCompleted(booking.TenantId, booking.Id)
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        continue;
+                    }
                 }
             }
 
-            // 2️ Cancelled any pending payment booking after exceeds the deadline
+            // (Cancelled)
+
             var pendingSpec = new PendingPaymentExpiredSpecifications();
             var bookingsToCancel = await bookingRepo.GetAllWithSpecificationAsync(pendingSpec);
 
@@ -373,9 +435,20 @@ namespace Makanak.Services.Services.BookingImplement
             {
                 foreach (var booking in bookingsToCancel)
                 {
-                    booking.Status = BookingStatus.Cancelled;
-                    booking.CancellationReason = "Auto-Cancelled: Payment deadline expired.";
-                    bookingRepo.Update(booking);
+                    try
+                    {
+                        booking.Status = BookingStatus.Cancelled;
+                        booking.CancellationReason = "Auto-Cancelled: Payment deadline expired.";
+                        bookingRepo.Update(booking);
+
+                        await notificationService.SendNotificationAsync(
+                            NotificationFactory.BookingExpired(booking.TenantId, booking.Id)
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        continue;
+                    }
                 }
             }
 

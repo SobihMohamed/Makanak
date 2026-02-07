@@ -13,6 +13,7 @@ namespace Makanak.Services.Specifications.BookingSpec
                         b.PaymentDeadline.HasValue &&
                         b.PaymentDeadline.Value < DateTime.UtcNow)
         {
+            AddInclude(b => b.Tenant);
         }
     }
 }

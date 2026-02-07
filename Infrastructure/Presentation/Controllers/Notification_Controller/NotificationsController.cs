@@ -1,4 +1,5 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
+using Makanak.Shared.Dto_s.Notification;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -43,5 +44,20 @@ namespace Makanak.Presentation.Controllers.Notification_Controller
 
            return Success("Notification marked as read");
         }
+
+        //[HttpPost("test-send")] // 👈 دي هنمسحها بعدين
+        //public async Task<IActionResult> TestSend([FromBody] CreateNotificationDto dto)
+        //{
+        //    // بنجيب الـ Id بتاعك أنت عشان تبعت لنفسك وتشوف النتيجة
+        //    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        //    // بنعدل الـ DTO عشان يروح لليوزر الحالي
+        //    dto.UserId = userId;
+
+        //    // بننادي السرفيس اللي تعبنا فيها
+        //    var result = await serviceManager.NotificationService.SendNotificationAsync(dto);
+
+        //    return Success("Notification Simulated Successfully!");
+        //}
     }
 }
