@@ -39,6 +39,9 @@ namespace Makanak.Domain.Models.BookingEntities
         public string? PaymentIntentId { get; set; } // رقم عملية الدفع
         public string? ClientSecret { get; set; }
 
+        public bool IsPaymentWarningSent { get; set; } = false;
+        public bool IsCheckInReminderSent { get; set; } = false;
+
         public DateTime? PaymentDeadline { get; set; }
 
 

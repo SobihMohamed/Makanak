@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.ReviewService;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Exceptions;
@@ -6,10 +7,12 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Domain.Models.ReviewEntities;
+using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.ReviewSpec;
 using Makanak.Shared.Dto_s.Review;
 using Makanak.Shared.EnumsHelper.Booking;
+using Makanak.Shared.HelpersFactory;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System;
 using System.Collections.Generic;
@@ -17,7 +20,7 @@ using System.Text;
 
 namespace Makanak.Services.Services.ReviewImplement
 {
-    public class ReviewService(IUnitOfWork unitOfWork, IMapper mapper) : IReviewService
+    public class ReviewService(IUnitOfWork unitOfWork, IMapper mapper ,INotificationService notificationService) : IReviewService
     {
         public async Task<ReviewDto> AddReviewAsync(CreateReviewDto createReviewDto, string tenantId)
         {
@@ -61,6 +64,14 @@ namespace Makanak.Services.Services.ReviewImplement
 
             // update property average rating
             await UpdatePropertyAverageRatingAsync(booking.PropertyId);
+            
+            await notificationService.SendNotificationAsync(
+            NotificationFactory.ReviewReceived(
+                booking.OwnerId,       
+                booking.Tenant.Name,   
+                booking.Property.Title,
+                review.Id              
+            ));
 
             return mapper.Map<ReviewDto>(review);
 
@@ -115,18 +126,24 @@ namespace Makanak.Services.Services.ReviewImplement
             var spec = new ReviewSpecifications(propertyId, IsPropertyReviews: true);
             var reviews = await reviewRepo.GetAllWithSpecificationAsync(spec);
 
+            var property = await propertyRepo.GetByIdAsync(propertyId);
+            if (property == null) 
+                throw new PropertyNotFound(propertyId);
+
             if (reviews.Any())
             {
                 var average = reviews.Average(r => r.Rating);
 
-                var property = await propertyRepo.GetByIdAsync(propertyId);
-
                 property.AverageRating = Math.Round(average, 1);
 
+            }
+            else
+            {
+                property.AverageRating = 0;
+            }
                 propertyRepo.Update(property);
 
                 await unitOfWork.SaveChangesAsync();
-            }
 
         }
     }

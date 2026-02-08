@@ -23,14 +23,33 @@ namespace Makanak.Domain.EnumsHelper.Notification
         BookingConfirmed =8,
 
         // --- 3. Payment Cycle (Instapay & Manual) ---
-        PaymentReminder = 8,       
-        PaymentReceiptUploaded = 9, 
-        PaymentApproved = 10,       
-        PaymentRejected = 11,
-        PaymentFailed = 12,
+        PaymentReminder = 9,       
+        PaymentReceiptUploaded = 10, 
+        PaymentApproved = 11,       
+        PaymentRejected = 12,
+        PaymentFailed = 13,
 
         // --- 4. Trust & Safety (Disputes) ---
-        DisputeOpened = 12,     
-        DisputeResolved = 13    
+        DisputeOpened = 14,     
+        DisputeResolved = 15 ,
+
+        // --- 5. Reviews
+        ReviewReceived = 16,
+
+        // --- 6. Admin
+        NewPropertyListing = 17,       // عقار جديد مستني موافقة
+        DocumentVerificationRequest = 18, // يوزر رفع هوية ومستني توثيق
+
+        PropertyStatusChanged = 19,
+        UserStatusChanged = 20,      
+
+        // --- 7. Reminder
+        BookingReminder = 21,
+
+        // --- Background services
+        PaymentWarning = 22,
+        CheckInReminder = 23
+
+
     }
 }

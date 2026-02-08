@@ -9,6 +9,7 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Services.Specifications.AutomatedNotificationSpec;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Shared.Dto_s.Booking;
@@ -400,12 +401,57 @@ namespace Makanak.Services.Services.BookingImplement
         {
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
 
-            // 
-            // (Completed)
+            // (Reminders)
+
+            // A. Payment Warning
+            var paymentWarningSpec = new PaymentWarningSpecification();
+            var bookingsToWarn = await bookingRepo.GetAllWithSpecificationAsync(paymentWarningSpec);
+
+            foreach (var booking in bookingsToWarn)
+            {
+                try
+                {
+                    var minutesLeft = (int)(booking.PaymentDeadline.Value - DateTime.UtcNow).TotalMinutes;
+                    if (minutesLeft <= 0) minutesLeft = 1;
+
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.PaymentDeadlineWarning(booking.TenantId, booking.Id, minutesLeft)
+                    );
+
+                    booking.IsPaymentWarningSent = true;
+                    bookingRepo.Update(booking);
+                }
+                catch (Exception) { continue; }
+            }
+
+            // B. Check-In Reminder
+            var checkInSpec = new UpcomingCheckInSpecification(); 
+            var bookingsToRemind = await bookingRepo.GetAllWithSpecificationAsync(checkInSpec);
+
+            foreach (var booking in bookingsToRemind)
+            {
+                try
+                {
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.CheckInReminder(booking.TenantId, booking.Property.Title, booking.Id)
+                    );
+
+                    booking.IsCheckInReminderSent = true;
+                    bookingRepo.Update(booking);
+                }
+                catch (Exception) { continue; }
+            }
+
+            // Save Reminders Changes
+            if (bookingsToWarn.Any() || bookingsToRemind.Any())
+            {
+                await unitOfWork.SaveChangesAsync();
+            }
+
+            //  (Actions) - Complete & Cancel
 
             var completedSpec = new ExpiredBookingSpecifications();
             var bookingsToComplete = await bookingRepo.GetAllWithSpecificationAsync(completedSpec);
-
             if (bookingsToComplete.Any())
             {
                 foreach (var booking in bookingsToComplete)
@@ -413,24 +459,17 @@ namespace Makanak.Services.Services.BookingImplement
                     try
                     {
                         booking.Status = BookingStatus.Completed;
-                        bookingRepo.Update(booking); 
-
+                        bookingRepo.Update(booking);
                         await notificationService.SendNotificationAsync(
                             NotificationFactory.BookingCompleted(booking.TenantId, booking.Id)
                         );
                     }
-                    catch (Exception ex)
-                    {
-                        continue;
-                    }
+                    catch (Exception) { continue; }
                 }
             }
 
-            // (Cancelled)
-
             var pendingSpec = new PendingPaymentExpiredSpecifications();
             var bookingsToCancel = await bookingRepo.GetAllWithSpecificationAsync(pendingSpec);
-
             if (bookingsToCancel.Any())
             {
                 foreach (var booking in bookingsToCancel)
@@ -440,15 +479,11 @@ namespace Makanak.Services.Services.BookingImplement
                         booking.Status = BookingStatus.Cancelled;
                         booking.CancellationReason = "Auto-Cancelled: Payment deadline expired.";
                         bookingRepo.Update(booking);
-
                         await notificationService.SendNotificationAsync(
                             NotificationFactory.BookingExpired(booking.TenantId, booking.Id)
                         );
                     }
-                    catch (Exception ex)
-                    {
-                        continue;
-                    }
+                    catch (Exception) { continue; }
                 }
             }
 

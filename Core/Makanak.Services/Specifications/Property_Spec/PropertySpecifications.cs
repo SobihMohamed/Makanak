@@ -13,6 +13,7 @@ namespace Makanak.Services.Specifications.Property_Spec
     {
         public PropertySpecifications(string ownerId) : base(p => p.OwnerId == ownerId)
         {
+            AddInclude(p => p.Owner);
             AddOrderByDesc(p => p.CreatedAt);           
         }
         public PropertySpecifications(int propId) : base(p => p.Id== propId)

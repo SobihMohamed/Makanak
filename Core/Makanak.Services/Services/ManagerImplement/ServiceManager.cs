@@ -48,25 +48,27 @@ namespace Makanak.Services.Services.ManagerImplement
 
             _attachementServices = new Lazy<IAttachementServices>(() => new AttachementServices());
 
+            _notificationService = new Lazy<INotificationService>(() => new NotificationService(_Uow,notifier,mapper));
+
             _authService = new Lazy<IAuthService>(() => new AuthService(
                 _Uow,
                 userManager,
                 _attachementServices.Value, 
                 configuration,
                 mapper,
-                _emailService.Value 
+                _emailService.Value ,
+                _notificationService.Value
             ));
 
-            _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration));
+            _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration,_notificationService.Value));
             
-            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(mapper,AttachementServices, _Uow));
+            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,AttachementServices, _Uow,_notificationService.Value));
 
             _paymentService = new Lazy<IPaymentService> (() => new PaymentServices(options));
 
-            _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager));
+            _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager,_notificationService.Value));
             
-            _reviewService = new Lazy<IReviewService>(() => new ReviewService(_Uow, mapper));
-            _notificationService = new Lazy<INotificationService>(() => new NotificationService(_Uow,notifier,mapper));
+            _reviewService = new Lazy<IReviewService>(() => new ReviewService(_Uow, mapper,_notificationService.Value));
 
 
         }

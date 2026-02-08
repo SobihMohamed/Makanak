@@ -7,15 +7,11 @@ namespace Makanak.Services.Specifications.NotificationSpec
         public NotificationSpecefication(string userId, bool? isRead)
         : base(n =>
             n.UserId == userId &&
-            (!isRead.HasValue || n.IsRead == isRead.Value)
-          )
+            (!isRead.HasValue || n.IsRead == isRead.Value) 
+        )
         {
-            AddInclude(n => n.Sender);
-            AddOrderByDesc(n => n.CreatedAt);
-        }
-        public NotificationSpecefication(string userId , bool isRead)
-            : base(n => n.UserId == userId && n.IsRead == isRead)
-        {
+            AddInclude(n => n.Sender!); 
+            AddOrderByDesc(n => n.CreatedAt); 
         }
     }
 }

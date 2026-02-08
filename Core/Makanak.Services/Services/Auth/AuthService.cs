@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Auth;
+using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.EnumsHelper.User;
@@ -8,11 +9,13 @@ using Makanak.Domain.Exceptions;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.ResetPassword;
+using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.User;
 using Makanak.Shared.Dto_s;
 using Makanak.Shared.Dto_s.Authentication;
 using Makanak.Shared.Dto_s.Authentication.Password;
 using Makanak.Shared.Dto_s.User;
+using Makanak.Shared.HelpersFactory;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -24,7 +27,7 @@ namespace Makanak.Services.Services.Auth
 {
     public class AuthService(IUnitOfWork unitOfWork,UserManager<ApplicationUser> userManager,
         IAttachementServices attachementServices, IConfiguration configuration,
-        IMapper mapper, IEmailService emailService)
+        IMapper mapper, IEmailService emailService , INotificationService notificationService)
         : IAuthService
     {
         public async Task<AuthModelDto> LoginAsync(LoginDto loginDto)
@@ -297,6 +300,18 @@ namespace Makanak.Services.Services.Auth
                 throw new BadRequestException("Identity Verification Failed: ", errors);
             }
 
+            var admins = await userManager.GetUsersInRoleAsync("Admin");
+
+            foreach (var admin in admins)
+            {
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.DocumentVerificationRequest(
+                        admin.Id,
+                        user.Name,
+                        user.Id
+                    )
+                );
+            }
             return true;
         }
 

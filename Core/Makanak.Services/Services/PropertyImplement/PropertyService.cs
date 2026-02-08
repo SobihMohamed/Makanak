@@ -1,22 +1,28 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices;
+using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Services.AutoMapper.Resolver;
+using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Property_Params;
 using Makanak.Shared.Dto_s.Property;
 using Makanak.Shared.EnumsHelper.Property;
+using Makanak.Shared.HelpersFactory;
+using Microsoft.AspNetCore.Identity;
 using System.Xml;
 
 
 namespace Makanak.Services.Services.PropertyImplement
 {
-    public class PropertyService(IMapper _mapper, IAttachementServices _attachementServices, IUnitOfWork _unitOfWork) : IPropertyService
+    public class PropertyService(UserManager<ApplicationUser> userManager, IMapper _mapper,
+        IAttachementServices _attachementServices, IUnitOfWork _unitOfWork,
+        INotificationService notificationService) : IPropertyService
     {
         public async Task<PropertyDetailDto> CreatePropertyAsync(CreatePropertyDto dto, string ownerId)
         {
@@ -98,7 +104,24 @@ namespace Makanak.Services.Services.PropertyImplement
             var loadedProperty = await propertyRepository.GetByIdWithSpecificationsAsync(spec);
 
             // Mappig & Return
-            return _mapper.Map<PropertyDetailDto>(property);
+            var propertyDto = _mapper.Map<PropertyDetailDto>(property);
+
+            // Send Notification
+            var admins = await userManager.GetUsersInRoleAsync("Admin");
+
+            foreach (var admin in admins)
+            {
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.NewPropertyRequest(
+                        admin.Id,
+                        loadedProperty.Owner.Name,
+                        loadedProperty.Title,
+                        loadedProperty.Id
+                    )
+                );
+            }
+
+            return propertyDto;
         }
 
         public async Task<IEnumerable<PropertyDto>> GetPropertiesByOwnerId(string ownerId)

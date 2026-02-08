@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Admin;
+using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.EnumsHelper.User;
 using Makanak.Domain.Exceptions;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Services.Specifications.User;
 using Makanak.Shared.Common;
@@ -14,13 +16,16 @@ using Makanak.Shared.Common.Params;
 using Makanak.Shared.Common.Params.User;
 using Makanak.Shared.Dto_s.Admin;
 using Makanak.Shared.EnumsHelper.Property;
+using Makanak.Shared.HelpersFactory;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Configuration;
+using Stripe;
 
 
 namespace Makanak.Services.Services.Admin
 {
     public class AdminServices(IUnitOfWork _unitOfWork , IMapper mapper,
-        IEmailService emailService, IConfiguration configuration) : IAdminServices
+        IEmailService emailService, IConfiguration configuration , INotificationService notificationService) : IAdminServices
     {
         public async Task<Pagination<UserForApprovalDto>> GetAllUsersAsync(UserParams userParams)
         {
@@ -46,56 +51,55 @@ namespace Makanak.Services.Services.Admin
             // return the result
             return new Pagination<UserForApprovalDto>(userParams.PageIndex,userParams.PageSize,totalCount,UsersDto);
         }
-
+      
         public async Task<bool> UpdateUserStatusAsync(UpdateUserStatusDto dto)
         {
-            // get the user repository
             var userRepository = _unitOfWork.GetRepo<ApplicationUser, string>();
-
-            // generate the specifications for the user to be updated
             var userSpec = new UserSpecifications(dto.UserId);
-
-            // get the user with the specifications 
             var user = await userRepository.GetByIdWithSpecificationsAsync(userSpec);
 
-            // if user not found return false
             if (user == null)
-                throw  UserNotFoundException.ById(dto.UserId);
+                throw UserNotFoundException.ById(dto.UserId);
 
-            // update the user status and rejected reason
+
             user.UserStatus = dto.NewStatus;
 
-            user.RejectedReason = dto.RejectedReason;
-            userRepository.Update(user);
+            if (dto.NewStatus == UserStatus.Rejected || dto.NewStatus == UserStatus.Banned)
+                user.RejectedReason = dto.RejectedReason;
+            else
+                user.RejectedReason = null;
 
-            // save the changes
+            userRepository.Update(user);
             var res = await _unitOfWork.SaveChangesAsync();
 
             if (res > 0)
             {
                 try
                 {
-                    string emailBody = "";
-
-                    if (!string.IsNullOrEmpty(dto.RejectedReason) && dto.NewStatus == UserStatus.Rejected)
+                    string emailBody = dto.NewStatus switch
                     {
-                        emailBody = $"Dear {user.Name},<br/><br/>Your account verification status has been updated to <b>{dto.NewStatus}</b>.<br/><br/><b>Reason:</b> {dto.RejectedReason}<br/><br/>Best regards,<br/>Makanak Team";
-                    }
-                    else
-                    {
-                        emailBody = $"Dear {user.Name},<br/><br/>Your account verification status has been updated to <b>{dto.NewStatus}</b>.<br/><br/>Best regards,<br/>Makanak Team";
-                    }
+                        UserStatus.Active => $"Congratulations {user.Name}! Your account is now <b>Active</b>.",
+                        UserStatus.Rejected => $"Your account verification was <b>Rejected</b>.<br/>Reason: {dto.RejectedReason}",
+                        UserStatus.Banned => $"⛔ Your account has been <b>BANNED</b>.<br/>Reason: {dto.RejectedReason}",
+                        _ => $"Your account status changed to {dto.NewStatus}."
+                    };
 
-                    await emailService.SendEmailAsync(user.Email, "Makanak - Account Verification Update", emailBody);
+                    await emailService.SendEmailAsync(user.Email, $"Makanak - Account Update: {dto.NewStatus}", emailBody);
+
+                    // 2. الإشعار
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.UserStatusUpdate(
+                            dto.UserId,
+                            dto.NewStatus, 
+                            dto.RejectedReason
+                        )
+                    );
                 }
-                catch (Exception ex)
-                {
-                    // Log the exception (logging mechanism not shown here
-                    throw new BadRequestException($"Email Failed : " + ex.Message);
-                }
+                catch (Exception) { /* Log */ }
+
                 return true;
             }
-                return false;
+            return false;
         }
 
         public async Task<UserVerificationDetailsDto> GetUserVerificationDetails(string userId)
@@ -152,57 +156,70 @@ namespace Makanak.Services.Services.Admin
 
         public async Task<bool> UpdatePropertyStatus(UpdatePropertyStatusDto dto)
         {
-            // get property repository
             var propRepo = _unitOfWork.GetRepo<Property, int>();
 
-            // generate specifications for the property to be updated
             var propSpec = new PropertySpecifications(dto.PropertyId);
-
-            // get the property with the specifications
             var property = await propRepo.GetByIdWithSpecificationsAsync(propSpec);
 
-            // if property not found return false
-            if (property == null)
-                throw new PropertyNotFound(dto.PropertyId);
+            if (property == null) throw new PropertyNotFound(dto.PropertyId);
 
-            // update the property status and rejected reason
             property.PropertyStatus = dto.NewStatus;
-            property.RejectedReason= dto.RejectedReason;
+
+            if (dto.NewStatus == PropertyStatus.Rejected || dto.NewStatus == PropertyStatus.Banned)
+                property.RejectedReason = dto.RejectedReason;
+            else
+                property.RejectedReason = null; // تنظيف
 
             propRepo.Update(property);
-            // save the changes
             var res = await _unitOfWork.SaveChangesAsync();
-           
+
             if (res > 0)
             {
                 try
                 {
-                    var ownerName = property.Owner.Name;
-                    var ownerEmail = property.Owner.Email;
-                    string emailBody = "";
-
-                    if (!string.IsNullOrEmpty(dto.RejectedReason) && dto.NewStatus == PropertyStatus.Rejected)
+                    if (property.Owner != null)
                     {
-                        emailBody = $"Dear {ownerName},<br/><br/>Your property listing <b>{property.Title}</b> has been <b>Rejected</b>.<br/><br/><b>Reason:</b> {dto.RejectedReason}<br/><br/>Best regards,<br/>Makanak Team";
-                    }
-                    else if (dto.NewStatus == PropertyStatus.Accepted)
-                    {
-                        emailBody = $"Dear {ownerName},<br/><br/>Congratulations! Your property listing <b>{property.Title}</b> has been <b>Accepted</b> and is now live on Makanak.<br/><br/>Best regards,<br/>Makanak Team";
+                        string emailBody = dto.NewStatus switch
+                        {
+                            PropertyStatus.Accepted =>
+                                $"Dear {property.Owner.Name},<br/>Your property <b>{property.Title}</b> is now <b>Live</b>! 🎉",
+
+                            PropertyStatus.Rejected =>
+                                $"Dear {property.Owner.Name},<br/>Your property <b>{property.Title}</b> was <b>Rejected</b>.<br/>Reason: {dto.RejectedReason}",
+
+                            PropertyStatus.Banned =>
+                                $"⚠️ ALERT: Your property <b>{property.Title}</b> has been <b>BANNED</b>.<br/>Reason: {dto.RejectedReason}<br/>Please contact support.",
+
+                            PropertyStatus.Pending =>
+                                $"Dear {property.Owner.Name},<br/>Your property <b>{property.Title}</b> is back under review.",
+
+                            _ => "" // Default case
+                        };
+
+                        if (!string.IsNullOrEmpty(emailBody))
+                        {
+                            string subject = $"Makanak - Property Status: {dto.NewStatus}";
+                            await emailService.SendEmailAsync(property.Owner.Email, subject, emailBody);
+                        }
                     }
 
-                    await emailService.SendEmailAsync(ownerEmail, "Makanak - Property Status Update", emailBody);
-
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.PropertyStatusUpdate(
+                            property.OwnerId,
+                            property.Title,
+                            dto.NewStatus,         
+                            dto.RejectedReason
+                        )
+                    );
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception (logging mechanism not shown here
-                    throw new BadRequestException($"Email Failed : " + ex.Message);
+                    // _logger.LogError(...);
                 }
                 return true;
             }
-            
-            return false;
 
+            return false;
         }
     }
 }
