@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="wwwroot\uploads\Disputes\" />
     <Folder Include="wwwroot\uploads\Properties\" />
   </ItemGroup>
 

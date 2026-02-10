@@ -25,9 +25,9 @@ namespace Makanak.Persistance.Configurations
                 .HasForeignKey(d => d.BookingId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(d=>d.Complaint)
+            builder.HasOne(d=>d.Complainant)
                 .WithMany(u=>u.Disputes)
-                .HasForeignKey(d=>d.ComplaintId)
+                .HasForeignKey(d=>d.ComplainantId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.HasMany(d=>d.DisputeImages)

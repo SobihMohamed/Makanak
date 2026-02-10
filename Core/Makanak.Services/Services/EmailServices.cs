@@ -21,6 +21,7 @@ namespace Makanak.Services.Services
             // 1. Configure Smtp Client
             var client = new SmtpClient(_emailSettings.Host, _emailSettings.Port)
             {
+                UseDefaultCredentials = false,
                 Credentials = new NetworkCredential(_emailSettings.Email, _emailSettings.Password),
                 EnableSsl = true
             };

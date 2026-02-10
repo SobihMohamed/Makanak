@@ -32,23 +32,24 @@ namespace Makanak.Domain.EnumsHelper.Notification
         // --- 4. Trust & Safety (Disputes) ---
         DisputeOpened = 14,     
         DisputeResolved = 15 ,
+        DisputeCancelled = 16,
 
         // --- 5. Reviews
-        ReviewReceived = 16,
+        ReviewReceived = 17,
 
         // --- 6. Admin
-        NewPropertyListing = 17,       // عقار جديد مستني موافقة
-        DocumentVerificationRequest = 18, // يوزر رفع هوية ومستني توثيق
+        NewPropertyListing = 18,       // عقار جديد مستني موافقة
+        DocumentVerificationRequest = 19, // يوزر رفع هوية ومستني توثيق
 
-        PropertyStatusChanged = 19,
-        UserStatusChanged = 20,      
+        PropertyStatusChanged = 20,
+        UserStatusChanged = 21,      
 
         // --- 7. Reminder
-        BookingReminder = 21,
+        BookingReminder = 22,
 
         // --- Background services
-        PaymentWarning = 22,
-        CheckInReminder = 23
+        PaymentWarning = 23,
+        CheckInReminder = 24
 
 
     }

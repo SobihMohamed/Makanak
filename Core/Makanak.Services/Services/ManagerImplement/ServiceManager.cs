@@ -3,6 +3,7 @@ using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Booking;
+using Makanak.Abstraction.IServices.DisputeService;
 using Makanak.Abstraction.IServices.Manager;
 using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PaymentService;
@@ -14,6 +15,7 @@ using Makanak.Domain.Models.Identity;
 using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.Auth;
 using Makanak.Services.Services.BookingImplement;
+using Makanak.Services.Services.DisputeImplement;
 using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Services.PropertyImplement;
@@ -36,6 +38,7 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IBookingService> _bookingService;
         private readonly Lazy<IPaymentService> _paymentService;
         private readonly Lazy<IReviewService> _reviewService;
+        private readonly Lazy<IDisputeService> _disputeService;
         private readonly Lazy<INotificationService> _notificationService;
         public ServiceManager(IUnitOfWork _Uow,IMapper mapper,
             IConfiguration configuration,
@@ -62,13 +65,15 @@ namespace Makanak.Services.Services.ManagerImplement
 
             _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration,_notificationService.Value));
             
-            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,AttachementServices, _Uow,_notificationService.Value));
+            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,_attachementServices.Value, _Uow,_notificationService.Value));
 
             _paymentService = new Lazy<IPaymentService> (() => new PaymentServices(options));
 
             _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager,_notificationService.Value));
             
             _reviewService = new Lazy<IReviewService>(() => new ReviewService(_Uow, mapper,_notificationService.Value));
+           
+            _disputeService = new Lazy<IDisputeService>(() => new DisputeService(_Uow,mapper,_attachementServices.Value,userManager,_notificationService.Value));
 
 
         }
@@ -81,6 +86,7 @@ namespace Makanak.Services.Services.ManagerImplement
         public IPaymentService PaymentService => _paymentService.Value;
         public IBookingService BookingService=> _bookingService.Value;
         public IReviewService ReviewService=> _reviewService.Value;
+        public IDisputeService DisputeService => _disputeService.Value;
         public INotificationService NotificationService=> _notificationService.Value;
     }
 }

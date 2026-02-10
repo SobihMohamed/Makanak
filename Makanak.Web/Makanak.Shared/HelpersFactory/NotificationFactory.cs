@@ -1,10 +1,8 @@
 ﻿using Makanak.Domain.EnumsHelper.Notification;
 using Makanak.Domain.EnumsHelper.User;
 using Makanak.Shared.Dto_s.Notification;
+using Makanak.Shared.EnumsHelper.Dispute;
 using Makanak.Shared.EnumsHelper.Property;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Makanak.Shared.HelpersFactory
 {
@@ -236,7 +234,46 @@ namespace Makanak.Shared.HelpersFactory
                 NotificationType = NotificationType.UserStatusChanged
             };
         }
+       
+        public static CreateNotificationDto NewDisputeCreated(string adminId, string complainantName, int bookingId, int disputeId)
+        {
+            return new CreateNotificationDto
+            {
+                UserId = adminId,
+                Title = "New Dispute Opened ⚠️",
+                Message = $"User '{complainantName}' has raised a dispute regarding Booking #{bookingId}. Action required.",
+                ReferenceId = disputeId.ToString(),
+                NotificationType = NotificationType.DisputeOpened
+            };
+        }
 
+        public static CreateNotificationDto DisputeConcluded(string userId, int bookingId, int disputeId, DisputeStatus decision, string adminComment)
+        {
+            string statusText = decision == DisputeStatus.Resolved ? "Resolved" : "Rejected";
+
+            string icon = decision == DisputeStatus.Resolved ? "✅" : "❌";
+
+            return new CreateNotificationDto
+            {
+                UserId = userId,
+                Title = $"Dispute Update: {statusText} {icon}",
+                Message = $"The dispute regarding Booking #{bookingId} has been closed as '{statusText}'.\nAdmin Comment: {adminComment}",
+                ReferenceId = disputeId.ToString(), 
+                NotificationType = NotificationType.DisputeResolved
+            };
+        }
+
+        public static CreateNotificationDto DisputeCancelled(string adminId, string complainantName, int bookingId, int disputeId)
+        {
+            return new CreateNotificationDto
+            {
+                UserId = adminId, // رايح للأدمن
+                Title = "Dispute Cancelled 🗑️",
+                Message = $"User '{complainantName}' has cancelled the dispute regarding Booking #{bookingId}. No further action is required.",
+                ReferenceId = disputeId.ToString(),
+                NotificationType = NotificationType.DisputeCancelled
+            };
+        }
         // ---7 . Background Services 
         public static CreateNotificationDto PaymentDeadlineWarning(string tenantId, int bookingId, int minutesLeft)
         {

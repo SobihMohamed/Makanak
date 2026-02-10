@@ -8,10 +8,16 @@ namespace Makanak.Shared.EnumsHelper.Dispute
 {
     public enum DisputeReason
     {
-        UnitNotAsDescribed = 1, // الشقة غير مطابقة للصور
-        OwnerAskedForExtraMoney = 2, // المالك طلب فلوس زيادة
-        UnitNotClean = 3, // الشقة غير نظيفة
-        OwnerNoShow = 4, // المالك مجاش يسلم المفتاح
-        Other = 5 // سبب آخر
+        PropertyNotAsDescribed = 1, // العقار غير مطابق للصور
+        CheckInIssue = 2,           // مشكلة في الدخول (المفتاح مش موجود مثلاً)
+        CleanlinessIssue = 3,       // المكان مش نضيف
+        HostUnreachable = 4,        // المالك مبردش
+
+        // أسباب للمالك
+        DamageToProperty = 5,       // المستأجر كسر حاجة
+        GuestDidNotLeave = 6,       // المستأجر ممشيش في الميعاد
+        PartyOrNoise = 7,           // عمل دوشة وحفلات ممنوعة
+
+        Other = 99// سبب آخر
     }
 }

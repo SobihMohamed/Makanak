@@ -11,6 +11,7 @@ using Makanak.Persistance.ProgramServices;
 using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper.Admin;
 using Makanak.Services.AutoMapper.BookingMapper;
+using Makanak.Services.AutoMapper.DisputeMapper;
 using Makanak.Services.AutoMapper.NotificationMapper;
 using Makanak.Services.AutoMapper.PropertyMapper;
 using Makanak.Services.AutoMapper.Resolver;
@@ -57,6 +58,7 @@ namespace Makanak.Web
                 cfg.AddProfile(new BookingProfile());
                 cfg.AddProfile(new ReviewProfile());
                 cfg.AddProfile(new NotificationProfile());
+                cfg.AddProfile(new DisputeProfile());
             });
             // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));
