@@ -72,6 +72,7 @@ namespace Makanak.Web
                           .AllowAnyMethod()
                           .AllowCredentials() // SignalR
                           .WithOrigins(
+                          "http://localhost:8080",
                           "http://localhost:4200", // Angular Default
                           "http://localhost:3000", // React Default
                           "http://localhost:5173", // Vite/Vue Default
