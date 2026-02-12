@@ -1,8 +1,7 @@
-﻿using Makanak.Abstraction.IServices.Booking;
-using Makanak.Abstraction.IServices.Manager;
+﻿using Makanak.Abstraction.IServices.Manager;
+using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params.Booking_Params;
 using Makanak.Shared.Dto_s.Booking;
-using Makanak.Shared.Dto_s.Payment;
-using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +12,10 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
     [Authorize]
     public class BookingController(IServiceManager serviceManager) : AppBaseController
     {
+
         [Authorize(Roles = "Tenant")]
         [HttpPost]
-        public async Task<IActionResult> CreateBooking(CreateBookingDto dto)
+        public async Task<ActionResult<ApiResponse<BookingDto>>> CreateBooking(CreateBookingDto dto)
         {
             var tenantId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(tenantId)) return UnauthorizedError("User ID not found in token");
@@ -28,7 +28,7 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetBookingById(int id)
+        public async Task<ActionResult<ApiResponse<BookingDto>>> GetBookingById(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
@@ -42,25 +42,28 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
         [Authorize(Roles = "Tenant")]
         [HttpGet("my-bookings")]
-        public async Task<IActionResult> GetMyBookingsAsTenant()
+        public async Task<ActionResult<ApiResponse<Pagination<BookingDto>>>> GetMyBookingsAsTenant([FromQuery] BookingSpecParams bookingParams)
         {
             var tenantId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var bookings = await serviceManager.BookingService.GetTenantBookingsAsync(tenantId);
+
+            var bookings = await serviceManager.BookingService.GetTenantBookingsAsync(tenantId!, bookingParams);
 
             return Success(bookings);
         }
 
         [Authorize(Roles = "Owner")]
         [HttpGet("incoming-bookings")]
-        public async Task<IActionResult> GetIncomingBookingsAsOwner()
+        public async Task<ActionResult<ApiResponse<Pagination<BookingDto>>>> GetIncomingBookingsAsOwner([FromQuery] BookingSpecParams bookingParams)
         {
             var ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var bookings = await serviceManager.BookingService.GetOwnerBookingsAsync(ownerId);
+
+            var bookings = await serviceManager.BookingService.GetOwnerBookingsAsync(ownerId!, bookingParams);
+
             return Success(bookings);
         }
 
         [HttpPut("{id}/cancel")]
-        public async Task<IActionResult> CancelBooking(int id)
+        public async Task<ActionResult<ApiResponse<string>>> CancelBooking(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userRole = User.FindFirstValue(ClaimTypes.Role);
@@ -74,7 +77,7 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
         [Authorize(Roles = "Owner")]
         [HttpPost("scan-qr")]
-        public async Task<IActionResult> ScanQrCode([FromBody] ScanQrRequestDto scanQrRequestDto)
+        public async Task<ActionResult<ApiResponse<BookingDto>>> ScanQrCode([FromBody] ScanQrRequestDto scanQrRequestDto)
         {
             var ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -86,7 +89,7 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
         [Authorize(Roles = "Owner, Admin")]
         [HttpPatch("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, UpdateBookingStatusDto updateBookingStatusDto)
+        public async Task<ActionResult<ApiResponse<string>>> UpdateStatus(int id, [FromBody] UpdateBookingStatusDto updateBookingStatusDto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var role = User.FindFirstValue(ClaimTypes.Role);
@@ -100,7 +103,7 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
         [Authorize(Roles = "Tenant")]
         [HttpPost("{bookingId}/payment")]
-        public async Task<IActionResult> CreateOrUpdatePaymentIntent(int bookingId)
+        public async Task<ActionResult<ApiResponse<BookingDto>>> CreateOrUpdatePaymentIntent(int bookingId)
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -111,5 +114,6 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
             return Success(result, "Payment Created Successfully");
         }
+    
     }
 }

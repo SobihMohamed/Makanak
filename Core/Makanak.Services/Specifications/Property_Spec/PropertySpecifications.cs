@@ -11,24 +11,39 @@ namespace Makanak.Services.Specifications.Property_Spec
 {
     public class PropertySpecifications : BaseSpecifications<Property, int>
     {
-        public PropertySpecifications(string ownerId) : base(p => p.OwnerId == ownerId)
+        public PropertySpecifications(string ownerId) 
+            : base(p => p.OwnerId == ownerId)
         {
             AddInclude(p => p.Owner);
             AddOrderByDesc(p => p.CreatedAt);           
         }
-        public PropertySpecifications(int propId) : base(p => p.Id== propId)
+   
+        public PropertySpecifications(int propId) 
+            : base(p => p.Id== propId)
         {
             AddInclude(p => p.Amenities);
             AddInclude(p => p.PropertyImages);
             AddInclude(p => p.Governorate);
             AddInclude(p => p.Owner);
         }
+        
         // count properties of owner
         public PropertySpecifications(string ownerId , bool Count) 
             : base(p => p.OwnerId == ownerId)
         {
         }
 
+        // used by get properties of owner by owner id 
+        public PropertySpecifications(string ownerId, PropertyParams propertyParams, bool isCount)
+        : base(x => x.OwnerId == ownerId) 
+        {
+            if (!isCount)
+            {
+                ApplyPagenation(propertyParams.PageSize, propertyParams.PageIndex);
+                AddOrderByDesc(x => x.CreatedAt);
+            }
+        }
+        
         public PropertySpecifications(PropertyParams propertyParams, bool isCount = false)
             : base
             (p =>
@@ -107,5 +122,6 @@ namespace Makanak.Services.Specifications.Property_Spec
                 }
             }
         }
+    
     }
 }

@@ -1,3 +1,4 @@
+using Makanak.Abstraction.IServices.Cashing;
 using Makanak.Abstraction.IServices.Manager;
 using Makanak.Abstraction.IServices.RealTimeNotifier;
 using Makanak.Domain.Contracts.InitializerDB;
@@ -12,12 +13,14 @@ using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper.Admin;
 using Makanak.Services.AutoMapper.BookingMapper;
 using Makanak.Services.AutoMapper.DisputeMapper;
+using Makanak.Services.AutoMapper.GovernorateMapper;
 using Makanak.Services.AutoMapper.NotificationMapper;
 using Makanak.Services.AutoMapper.PropertyMapper;
 using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Services.AutoMapper.ReviewMapper;
 using Makanak.Services.AutoMapper.User;
 using Makanak.Services.Services.BackgroundServices;
+using Makanak.Services.Services.CashingImplement;
 using Makanak.Services.Services.ManagerImplement;
 using Makanak.Shared.Common.Settings;
 using Makanak.Web.Middleware;
@@ -59,6 +62,7 @@ namespace Makanak.Web
                 cfg.AddProfile(new ReviewProfile());
                 cfg.AddProfile(new NotificationProfile());
                 cfg.AddProfile(new DisputeProfile());
+                cfg.AddProfile(new GovernorateProfile());
             });
             // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));
@@ -72,11 +76,7 @@ namespace Makanak.Web
                           .AllowAnyMethod()
                           .AllowCredentials() // SignalR
                           .WithOrigins(
-                          "http://localhost:8080",
-                          "http://localhost:4200", // Angular Default
-                          "http://localhost:3000", // React Default
-                          "http://localhost:5173", // Vite/Vue Default
-                          "http://localhost:5500"  // VS Code Live Server (?? ????? HTML/JS ???)
+                          "http://localhost:8080"
                       );
                 });
             });
@@ -95,6 +95,10 @@ namespace Makanak.Web
             builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
             // background service
             builder.Services.AddHostedService<BookingStatusWorker>();
+
+            // caching 
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
             #endregion
 
             #region JWT Configuration

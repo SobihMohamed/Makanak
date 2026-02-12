@@ -1,4 +1,6 @@
-﻿using Makanak.Shared.Dto_s.Booking;
+﻿using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params.Booking_Params;
+using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
 using System;
@@ -13,9 +15,9 @@ namespace Makanak.Abstraction.IServices.Booking
 
         Task<bool> IsPropertyAvailableAsync(int propertyId, DateTime checkIn, DateTime checkOut);
 
-        Task<IReadOnlyList<BookingDto>> GetTenantBookingsAsync(string tenantId);
+        Task<Pagination<BookingDto>> GetTenantBookingsAsync(string tenantId, BookingSpecParams bookingParams);
 
-        Task<IReadOnlyList<BookingDto>> GetOwnerBookingsAsync(string ownerId);
+        Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams);
 
         Task<BookingDetailDto> GetBookingByIdAsync(int bookingId, string UserId, string role);
 

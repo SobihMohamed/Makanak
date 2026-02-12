@@ -1,6 +1,8 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
+using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Dispute_Params;
 using Makanak.Shared.Dto_s.Dispute;
+using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -14,7 +16,7 @@ namespace Makanak.Presentation.Controllers.Dispute_Controller
     public class DisputeController(IServiceManager serviceManager) : AppBaseController
     {
         [HttpPost]
-        public async Task<IActionResult> CreateDispute([FromForm] CreateDisputeDto dto)
+        public async Task<ActionResult<ApiResponse<DisputeDto>>> CreateDispute([FromForm] CreateDisputeDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -24,7 +26,7 @@ namespace Makanak.Presentation.Controllers.Dispute_Controller
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllDisputes([FromQuery] DisputeParams disputeParams)
+        public async Task<ActionResult<ApiResponse<Pagination<DisputeDto>>>> GetAllDisputes([FromQuery] DisputeParams disputeParams)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             // بنجيب الرول عشان السرفيس تحدد (أدمن يشوف كله، يوزر يشوف حاجته)
@@ -36,7 +38,7 @@ namespace Makanak.Presentation.Controllers.Dispute_Controller
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDisputeById(int id)
+        public async Task<ActionResult<ApiResponse<DisputeDto>>> GetDisputeById(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var role = User.FindFirstValue(ClaimTypes.Role);
@@ -48,7 +50,7 @@ namespace Makanak.Presentation.Controllers.Dispute_Controller
 
         [Authorize(Roles = "Admin")]
         [HttpPut("resolve")]
-        public async Task<IActionResult> ResolveDispute([FromBody] ResolveDisputeDto dto)
+        public async Task<ActionResult<ApiResponse<string>>> ResolveDispute([FromBody] ResolveDisputeDto dto)
         {
             // مش محتاجين UserId هنا لأن الأدمن له صلاحية مطلقة
             var result = await serviceManager.DisputeService.ResolveDisputeAsync(dto);
@@ -60,7 +62,7 @@ namespace Makanak.Presentation.Controllers.Dispute_Controller
         }
 
         [HttpPatch("{id}/cancel")]
-        public async Task<IActionResult> CancelDispute(int id)
+        public async Task<ActionResult<ApiResponse<string>>> CancelDispute(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

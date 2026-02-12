@@ -1,5 +1,6 @@
 ﻿using Makanak.Abstraction.IServices.Admin;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params;
 using Makanak.Shared.Common.Params.User;
 using Makanak.Shared.Dto_s.Admin;
@@ -14,14 +15,14 @@ namespace Makanak.Presentation.Controllers.Admin
     public class AdminController(IServiceManager serviceManager) : AppBaseController
     {
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers([FromQuery] UserParams userParams)
+        public async Task<ActionResult<Pagination<UserForApprovalDto>>> GetUsers([FromQuery] UserParams userParams)
         {
             var pendingUsers = await serviceManager.AdminService.GetAllUsersAsync(userParams);
             return Success(pendingUsers, "users retrived successfully");
         }
 
         [HttpPut("users/status")]
-        public async Task<IActionResult> UpdateUserStatus([FromBody] UpdateUserStatusDto dto)
+        public async Task<ActionResult<ApiResponse<string>>> UpdateUserStatus([FromBody] UpdateUserStatusDto dto)
         {
             var res = await serviceManager.AdminService.UpdateUserStatusAsync(dto);
             if (!res) return BadRequest("Failed to update user status");
@@ -30,7 +31,7 @@ namespace Makanak.Presentation.Controllers.Admin
         }
 
         [HttpPut("properties/status")]
-        public async Task<IActionResult> UpdatePropertyStatus([FromBody] UpdatePropertyStatusDto dto)
+        public async Task<ActionResult<ApiResponse<string>>> UpdatePropertyStatus([FromBody] UpdatePropertyStatusDto dto)
         {
             var res = await serviceManager.AdminService.UpdatePropertyStatus(dto);
             if (!res) return BadRequest("Failed to update Property status");
@@ -39,14 +40,14 @@ namespace Makanak.Presentation.Controllers.Admin
         }
 
         [HttpGet("users/{userId}/verification-details")]
-        public async Task<IActionResult> GetUserVerificationDetails([FromRoute] string userId)
+        public async Task<ActionResult<ApiResponse<UserVerificationDetailsDto>>> GetUserVerificationDetails([FromRoute] string userId)
         {
             var userDetails = await serviceManager.AdminService.GetUserVerificationDetails(userId);
             return Success(userDetails, "User verification details retrieved successfully");
         }
 
         [HttpGet("stats")]
-        public async Task<IActionResult> GetDashboardStats()
+        public async Task<ActionResult<ApiResponse<AdminDashboardStatsDto>>> GetDashboardStats()
         {
             var stats = await serviceManager.AdminService.GetDashboardStatsAsync();
             return Success(stats, "Admin Dashboard Statistics retrieved successfully");

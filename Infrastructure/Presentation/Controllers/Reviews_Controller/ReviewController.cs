@@ -1,5 +1,6 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
 using Makanak.Shared.Dto_s.Review;
+using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -12,8 +13,8 @@ namespace Makanak.Presentation.Controllers.Reviews_Controller
     public class ReviewController(IServiceManager serviceManager) :  AppBaseController
     {
         [Authorize(Roles = "Tenant")]
-        [HttpPost] 
-        public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto dto)
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<ReviewDto>>> CreateReview([FromBody] CreateReviewDto dto)
         {
             var tenantId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -24,7 +25,7 @@ namespace Makanak.Presentation.Controllers.Reviews_Controller
 
         [AllowAnonymous] 
         [HttpGet("{propertyId}")]
-        public async Task<IActionResult>GetPropertyReviews(int propertyId)
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<ReviewDto>>>> GetPropertyReviews(int propertyId)
         {
             var result = await serviceManager.ReviewService.GetPropertyReviewsAsync(propertyId);
 
@@ -33,7 +34,7 @@ namespace Makanak.Presentation.Controllers.Reviews_Controller
 
         [Authorize(Roles = "Tenant")]
         [HttpDelete("{reviewId}")]
-        public async Task<IActionResult> DeleteReview(int reviewId)
+        public async Task<ActionResult<ApiResponse<string>>> DeleteReview(int reviewId)
         {
             var tenantId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

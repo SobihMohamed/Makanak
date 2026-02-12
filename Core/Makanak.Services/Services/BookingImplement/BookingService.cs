@@ -12,6 +12,8 @@ using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Services.Specifications.AutomatedNotificationSpec;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
+using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params.Booking_Params;
 using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
@@ -135,30 +137,48 @@ namespace Makanak.Services.Services.BookingImplement
 
         }
 
-        public async Task<IReadOnlyList<BookingDto>> GetOwnerBookingsAsync(string ownerId)
+        public async Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams)
         {
-            // generate specification 
-            var spec = new BookingSpecifications(ownerId);
-
-            // get booking repo
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
 
-            // get bookings with specification
-            var bookings = await bookingRepo.GetAllWithSpecificationAsync(spec);
+            // (Count Specs)
+            // isTenant = false (لأنه مالك), isCount = true
+            var countSpec = new BookingPaginationSpecifications(ownerId, bookingParams, isTenant: false, isCount: true);
+            var totalItems = await bookingRepo.CountAsync(countSpec);
 
-            // map to dto
-            return mapper.Map<IReadOnlyList<BookingDto>>(bookings);
+            if (totalItems == 0)
+                return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, 0, new List<BookingDto>());
+
+            // (Data Specs)
+            // isTenant = false, isCount = false
+            var dataSpec = new BookingPaginationSpecifications(ownerId, bookingParams, isTenant: false, isCount: false);
+            var bookings = await bookingRepo.GetAllWithSpecificationAsync(dataSpec);
+
+            // Mapping & Return
+            var data = mapper.Map<IReadOnlyList<BookingDto>>(bookings);
+
+            return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, totalItems, data);
         }
 
-        public async Task<IReadOnlyList<BookingDto>> GetTenantBookingsAsync(string tenantId)
+        public async Task<Pagination<BookingDto>> GetTenantBookingsAsync(string tenantId, BookingSpecParams bookingParams)
         {
-            var spec = new BookingSpecifications(tenantId, isTenant: true);
-
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
 
-            var bookings = await bookingRepo.GetAllWithSpecificationAsync(spec);
+            // Count (isTenant = true)
+            var countSpec = new BookingPaginationSpecifications(tenantId, bookingParams, isTenant: true, isCount: true);
+            var totalItems = await bookingRepo.CountAsync(countSpec);
 
-            return mapper.Map<IReadOnlyList<BookingDto>>(bookings);
+            if (totalItems == 0)
+                return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, 0, new List<BookingDto>());
+
+            // 2. Data (isTenant = true)
+            var dataSpec = new BookingPaginationSpecifications(tenantId, bookingParams, isTenant: true, isCount: false);
+            var bookings = await bookingRepo.GetAllWithSpecificationAsync(dataSpec);
+
+            // 3. Return
+            var data = mapper.Map<IReadOnlyList<BookingDto>>(bookings);
+
+            return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, totalItems, data);
         }
 
         public async Task<bool> IsPropertyAvailableAsync(int propertyId, DateTime checkIn, DateTime checkOut)

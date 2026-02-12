@@ -11,8 +11,9 @@ namespace Makanak.Abstraction.IServices.PropertyService
     {
         Task<PropertyDetailDto> CreatePropertyAsync(CreatePropertyDto dto, string ownerId);
 
-        Task<IEnumerable<PropertyDto>> GetPropertiesByOwnerId(string ownerId);
-        
+        Task<Pagination<PropertyDto>> GetPropertiesByOwnerIdAsync(string ownerId, PropertyParams propertyParams);
+
+
         Task<PropertyDetailDto> GetPropertyDetailByIdAsync(int propertyId);
         
         Task<PropertyDetailDto> UpdatePropertyAsync(int Id ,UpdatePropertyDto dto, string ownerId);

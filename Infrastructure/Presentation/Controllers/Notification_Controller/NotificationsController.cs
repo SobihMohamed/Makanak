@@ -1,5 +1,6 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
 using Makanak.Shared.Dto_s.Notification;
+using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace Makanak.Presentation.Controllers.Notification_Controller
     public class NotificationsController(IServiceManager serviceManager) : AppBaseController
     {
         [HttpGet]
-        public async Task<IActionResult> GetUserNotifications([FromQuery] bool? isRead)
+        public async Task<ActionResult<ApiResponse<IReadOnlyList<NotificationDto>>>> GetUserNotifications([FromQuery] bool? isRead)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             // isRead = null  -> All 
@@ -23,7 +24,7 @@ namespace Makanak.Presentation.Controllers.Notification_Controller
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetUnreadCount()
+        public async Task<ActionResult<ApiResponse<NotificationCountDto>>> GetUnreadCount()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -33,7 +34,7 @@ namespace Makanak.Presentation.Controllers.Notification_Controller
         }
 
         [HttpPut("{id}/read")]
-        public async Task<IActionResult> MarkAsRead(int id)
+        public async Task<ActionResult<ApiResponse<string>>> MarkAsRead(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

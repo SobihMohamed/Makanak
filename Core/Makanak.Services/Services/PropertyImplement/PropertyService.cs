@@ -124,21 +124,29 @@ namespace Makanak.Services.Services.PropertyImplement
             return propertyDto;
         }
 
-        public async Task<IEnumerable<PropertyDto>> GetPropertiesByOwnerId(string ownerId)
+        public async Task<Pagination<PropertyDto>> GetPropertiesByOwnerIdAsync(string ownerId, PropertyParams propertyParams)
         {
-            // get property repo 
-            var propertyRepo = _unitOfWork.GetRepo<Property,int>();
+            // 1. Get Repo
+            var propertyRepo = _unitOfWork.GetRepo<Property, int>();
 
-            // generate specification 
-            var specs = new PropertySpecifications(ownerId);
+            // 2. Prepare Specifications
+            var countSpecs = new PropertySpecifications(ownerId, propertyParams, isCount: true);
 
-            // get properties 
-            var properties = await propertyRepo.GetAllWithSpecificationAsync(specs);
+            var totalItems = await propertyRepo.CountAsync(countSpecs);
 
-            // mapping 
-            var data = _mapper.Map<IEnumerable<PropertyDto>>(properties);
+            if (totalItems == 0)
+                return new Pagination<PropertyDto>(propertyParams.PageIndex, propertyParams.PageSize, 0, new List<PropertyDto>());
 
-            return data;
+            // 3. Get Data Specifications
+            var dataSpecs = new PropertySpecifications(ownerId, propertyParams, isCount: false);
+
+            var properties = await propertyRepo.GetAllWithSpecificationAsync(dataSpecs);
+
+            // 4. Mapping
+            var data = _mapper.Map<IReadOnlyList<PropertyDto>>(properties);
+
+            // 5. Return Paginated Result
+            return new Pagination<PropertyDto>(propertyParams.PageIndex, propertyParams.PageSize, totalItems, data);
         }
 
         public async Task<PropertyDetailDto> GetPropertyDetailByIdAsync(int propertyId)

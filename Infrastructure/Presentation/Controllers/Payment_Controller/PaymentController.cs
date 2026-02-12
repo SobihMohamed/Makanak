@@ -9,7 +9,7 @@ namespace Makanak.Presentation.Controllers.Payment_Controller
     public class PaymentController(IServiceManager serviceManager , ILogger<PaymentController> logger) : AppBaseController
     {
         [HttpPost("webhook")]
-        public async Task<IActionResult> StripeWebhook()
+        public async Task<ActionResult> StripeWebhook()
         {
             // 1. read body and header
             var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
