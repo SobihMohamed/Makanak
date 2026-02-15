@@ -1,5 +1,6 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
 using Makanak.Domain.EnumsHelper.User;
+using Makanak.Shared.Common;
 using Makanak.Shared.Dto_s.Governorate;
 using Makanak.Shared.Dto_s.Lookup;
 using Makanak.Shared.Dto_s.Property;
@@ -63,5 +64,8 @@ namespace Makanak.Presentation.Controllers.Lookup_Controller
         public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetUserTypes()
             => Success(EnumResolver.GetEnumList<UserTypes>());
 
+        [HttpGet("sorting-options")]
+        public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetSortingOptions()
+            => Success(EnumResolver.GetEnumList<SortingOptionsEnum>());
     }
 }

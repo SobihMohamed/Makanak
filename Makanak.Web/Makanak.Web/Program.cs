@@ -11,6 +11,7 @@ using Makanak.Persistance.Implements.UOW;
 using Makanak.Persistance.ProgramServices;
 using Makanak.Presentation.Extensions;
 using Makanak.Services.AutoMapper.Admin;
+using Makanak.Services.AutoMapper.AmenityMapper;
 using Makanak.Services.AutoMapper.BookingMapper;
 using Makanak.Services.AutoMapper.DisputeMapper;
 using Makanak.Services.AutoMapper.GovernorateMapper;
@@ -63,6 +64,7 @@ namespace Makanak.Web
                 cfg.AddProfile(new NotificationProfile());
                 cfg.AddProfile(new DisputeProfile());
                 cfg.AddProfile(new GovernorateProfile());
+                cfg.AddProfile(new AmenityProfile());
             });
             // AutoMapper UrlResolver
             builder.Services.AddTransient(typeof(UrlResolver<,>));
@@ -76,7 +78,8 @@ namespace Makanak.Web
                           .AllowAnyMethod()
                           .AllowCredentials() // SignalR
                           .WithOrigins(
-                          "http://localhost:8080"
+                          "http://localhost:8080",
+                          "http://localhost:8081"
                       );
                 });
             });

@@ -280,6 +280,13 @@ namespace Makanak.Services.Services.Auth
             var isDuplicated = await userRepository.GetByIdWithSpecificationsAsync(userSpecification);
             if (isDuplicated != null) throw new BadRequestException("National ID is already in use by another user.");
 
+            // delete other images
+            if (!string.IsNullOrEmpty(user.NationalIdImageFrontUrl))
+                await attachementServices.DeleteImage(user.NationalIdImageFrontUrl);
+
+            if (!string.IsNullOrEmpty(user.NationalIdImageBackUrl))
+                await attachementServices.DeleteImage(user.NationalIdImageBackUrl);
+
             // upload front & back image
             var ImagePath = Path.Combine("Users", user.Id, "Identity");
 

@@ -12,12 +12,14 @@ namespace Makanak.Services.Services.AmenityImplement
     {
         public async Task<IReadOnlyList<AmenityDto>> GetAllAmenitiesAsync()
         {
-            const string cacheKey = "lookups_amenities"; 
+            const string cacheKey = "lookups_amenities";
 
             var cachedData = await cacheService.GetCacheResponseAsync(cacheKey);
             if (!string.IsNullOrEmpty(cachedData))
             {
-                return JsonSerializer.Deserialize<IReadOnlyList<AmenityDto>>(cachedData)!;
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                return JsonSerializer.Deserialize<IReadOnlyList<AmenityDto>>(cachedData, options)!;
             }
 
             var repo = unitOfWork.GetRepo<Amenity, int>();

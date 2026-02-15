@@ -43,36 +43,44 @@ namespace Makanak.Services.Specifications.Property_Spec
                 AddOrderByDesc(x => x.CreatedAt);
             }
         }
-        
+
         public PropertySpecifications(PropertyParams propertyParams, bool isCount = false)
-            : base
-            (p =>
-                // main constant filters
-                (p.PropertyStatus == PropertyStatus.Accepted) &&
-                (!p.IsDeleted) &&
-                (p.IsAvailable)
-                    &&
-                // Hard filters
-                (string.IsNullOrEmpty(propertyParams.Search) ||
-                 p.Title.ToLower().Contains(propertyParams.Search) ||
-                 p.AreaName.ToLower().Contains(propertyParams.Search))
-                    &&
-                (!propertyParams.GovernorateId.HasValue || p.GovernorateId == propertyParams.GovernorateId)
-                    &&
-                (!propertyParams.Type.HasValue || p.PropertyType == propertyParams.Type)
-                    &&
-                //price limit is doubled to include more properties for ranking
-                (!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice * 2)  
-                    &&
-                (
-                    !propertyParams.CheckInDate.HasValue || !propertyParams.CheckOutDate.HasValue ||
-                    !p.Bookings.Any(b =>
-                        (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.PaymentReceived || b.Status == BookingStatus.CheckedIn)
-                          &&
-                        (b.CheckInDate < propertyParams.CheckOutDate && b.CheckOutDate > propertyParams.CheckInDate)
-                )
-        )
-            )
+      : base(p =>
+          // 1. فلاتر أساسية ثابتة
+          (p.PropertyStatus == PropertyStatus.Accepted) &&
+          (!p.IsDeleted) &&
+          (p.IsAvailable) &&
+
+          // 2. البحث بالكلام (Title or Area)
+          (string.IsNullOrEmpty(propertyParams.Search) ||
+           p.Title.ToLower().Contains(propertyParams.Search) ||
+           p.AreaName.ToLower().Contains(propertyParams.Search)) &&
+
+          // 3. فلاتر الموقع والنوع
+          (!propertyParams.GovernorateId.HasValue || p.GovernorateId == propertyParams.GovernorateId) &&
+          (!propertyParams.Type.HasValue || p.PropertyType == propertyParams.Type) &&
+
+          // 4. السعر (صارم - Strict)
+          (!propertyParams.MinPrice.HasValue || p.PricePerNight >= propertyParams.MinPrice) &&
+          (!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice) &&
+
+          // 5. السعة (عدد الأفراد والغرف)
+          (!propertyParams.MinBedrooms.HasValue || p.Bedrooms >= propertyParams.MinBedrooms) &&
+          (!propertyParams.MinMaxGuests.HasValue || p.MaxGuests >= propertyParams.MinMaxGuests) &&
+
+          // 6. المرافق (Amenities) - صارم
+          // هنا بنقول: لو اليوزر باعت AmenitiesIds، هات العقارات اللي فيها *على الأقل واحد* من دول
+          // (أو ممكن تخليها All لو عاوز لازم يكون فيه كل اللي اختاره)
+          (propertyParams.AmenityIds == null || propertyParams.AmenityIds.Count == 0 ||
+           p.Amenities.Any(a => propertyParams.AmenityIds.Contains(a.Id))) &&
+
+          // 7. تواريخ الحجز (Availability)
+          (!propertyParams.CheckInDate.HasValue || !propertyParams.CheckOutDate.HasValue ||
+           !p.Bookings.Any(b =>
+               (b.Status == BookingStatus.PendingPayment || b.Status == BookingStatus.PaymentReceived || b.Status == BookingStatus.CheckedIn) &&
+               (b.CheckInDate < propertyParams.CheckOutDate && b.CheckOutDate > propertyParams.CheckInDate)
+           ))
+      )
         {
             if (!isCount)
             {
@@ -80,48 +88,50 @@ namespace Makanak.Services.Specifications.Property_Spec
                 AddInclude(p => p.Governorate);
                 AddInclude(p => p.Amenities);
 
-                // Pagenation
-                ApplyPagenation(propertyParams.PageSize, propertyParams.PageIndex);
-
-                // (Location Sorting)
-                if (propertyParams.Latitude.HasValue && propertyParams.Longitude.HasValue)
+                // الترتيب (Sorting)
+                // بنستخدم الـ Switch عشان ننفذ طلب اليوزر بالظبط
+                if (propertyParams.Sort.HasValue)
                 {
+                    switch (propertyParams.Sort)
+                    {
+                        case SortingOptionsEnum.PriceAsc:
+                            AddOrderBy(p => p.PricePerNight);
+                            break;
+                        case SortingOptionsEnum.PriceDesc:
+                            AddOrderByDesc(p => p.PricePerNight);
+                            break;
+                        case SortingOptionsEnum.NameAsc:
+                            AddOrderBy(p => p.Title);
+                            break;
+                        case SortingOptionsEnum.NameDesc:
+                            AddOrderByDesc(p => p.Title);
+                            break;
+                        case SortingOptionsEnum.DateCreatedAsc: // Oldest
+                            AddOrderBy(p => p.CreatedAt);
+                            break;
+                        case SortingOptionsEnum.DateCreatedDesc: // Newest
+                        default:
+                            AddOrderByDesc(p => p.CreatedAt);
+                            break;
+                    }
+                }
+                else if (propertyParams.Latitude.HasValue && propertyParams.Longitude.HasValue)
+                {
+                    // لو مفيش ترتيب محدد بس فيه لوكيشن، رتب بالأقرب
                     AddOrderBy(p =>
                         (p.Latitude - propertyParams.Latitude.Value) * (p.Latitude - propertyParams.Latitude.Value) +
                         (p.Longitude - propertyParams.Longitude.Value) * (p.Longitude - propertyParams.Longitude.Value)
                     );
                 }
-                else {
-                    
-                    // if the property apply all filters(price , bedrooms , guest number) so we will rank it higher = 1 
-                    // else rank it lower = 0
-                    // so we will sort by this rank desc to get the best matching properties first
-                    AddOrderByDesc(p =>
-                        // is inside price range?
-                        (!propertyParams.MaxPrice.HasValue || p.PricePerNight <= propertyParams.MaxPrice) &&
-                        (!propertyParams.MinPrice.HasValue || p.PricePerNight >= propertyParams.MinPrice) &&
-
-                        // is inside other filters?
-                        (!propertyParams.MinBedrooms.HasValue || p.Bedrooms >= propertyParams.MinBedrooms) &&
-                        (!propertyParams.MinMaxGuests.HasValue || p.MaxGuests >= propertyParams.MinMaxGuests)
-                    );
-
-                    if (propertyParams.AmenityIds != null && propertyParams.AmenityIds.Count > 0)
-                    {
-                        AddOrderExpression(p => p.Amenities.Count(a => propertyParams.AmenityIds.Contains(a.Id)), true);
-                    }
-
-                    if (propertyParams.Sort != null && propertyParams.Sort == SortingOptionsEnum.PriceDesc)
-                    {
-                        AddOrderExpression(p => p.PricePerNight, true);
-                    }
-                    else
-                    {
-                        AddOrderExpression(p => p.PricePerNight, false);
-                    }
+                else
+                {
+                    // Default Sort (Newest)
+                    AddOrderByDesc(p => p.CreatedAt);
                 }
+
+                // Pagination لازم ييجي في الآخر
+                ApplyPagenation(propertyParams.PageSize, propertyParams.PageIndex);
             }
         }
-    
     }
 }

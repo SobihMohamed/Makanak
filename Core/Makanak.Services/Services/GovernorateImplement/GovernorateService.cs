@@ -21,20 +21,17 @@ namespace Makanak.Services.Services.GovernorateImplement
 
             var cachedData = await cacheService.GetCacheResponseAsync(cacheKey);
 
-            // if exist in cashing returned it
             if (!string.IsNullOrEmpty(cachedData))
             {
-                return JsonSerializer.Deserialize<IReadOnlyList<GovernorateDto>>(cachedData)!;
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                return JsonSerializer.Deserialize<IReadOnlyList<GovernorateDto>>(cachedData, options)!;
             }
 
             var repo = unitOfWork.GetRepo<Governorate, int>();
-
-            // get all governorates
             var governorates = await repo.GetAllAsync();
-
             var mappedGovernorates = mapper.Map<IReadOnlyList<GovernorateDto>>(governorates);
 
-            // save in cach
             await cacheService.SetCacheResponseAsync(cacheKey, mappedGovernorates, TimeSpan.FromDays(30));
 
             return mappedGovernorates;

@@ -33,9 +33,6 @@ namespace Makanak.Services.AutoMapper.PropertyMapper
         
             CreateMap<PropertyImage, PropertyImageDto>()
                 .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom<UrlResolver<PropertyImage, PropertyImageDto>, string>(src => src.ImageUrl));
-            
-            CreateMap<Amenity, AmenityDto>()
-                .ForMember(dest => dest.Name , opt=>opt.MapFrom(src=> src.NameEn));
 
             CreateMap<UpdatePropertyDto, Property>()
                 .ForMember(dest => dest.MainImageUrl, opt => opt.Ignore())
