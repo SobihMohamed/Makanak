@@ -346,5 +346,23 @@ namespace Makanak.Services.Services.PropertyImplement
             // return paginated result
             return new Pagination<PropertyDto>(propertyParams.PageIndex, propertyParams.PageSize, totalItems, data);
         }
+
+        public async Task<Pagination<PropertyDto>> GetPropertiesForAdminAsync(AdminPropertyParams adminParams)
+        {
+            var propertyRepo = _unitOfWork.GetRepo<Property, int>();
+
+            var countSpecs = new AdminPropertySpecifications(adminParams, true);
+            var totalItems = await propertyRepo.CountAsync(countSpecs);
+
+            if (totalItems == 0)
+                return new Pagination<PropertyDto>(adminParams.PageIndex, adminParams.PageSize, 0, new List<PropertyDto>());
+
+            var dataSpecs = new AdminPropertySpecifications(adminParams, false);
+            var properties = await propertyRepo.GetAllWithSpecificationAsync(dataSpecs);
+
+            var data = _mapper.Map<IReadOnlyList<PropertyDto>>(properties);
+
+            return new Pagination<PropertyDto>(adminParams.PageIndex, adminParams.PageSize, totalItems, data);
+        }
     }
 }

@@ -13,7 +13,6 @@ namespace Makanak.Abstraction.IServices.PropertyService
 
         Task<Pagination<PropertyDto>> GetPropertiesByOwnerIdAsync(string ownerId, PropertyParams propertyParams);
 
-
         Task<PropertyDetailDto> GetPropertyDetailByIdAsync(int propertyId);
         
         Task<PropertyDetailDto> UpdatePropertyAsync(int Id ,UpdatePropertyDto dto, string ownerId);
@@ -22,6 +21,6 @@ namespace Makanak.Abstraction.IServices.PropertyService
 
         Task<Pagination<PropertyDto>> GetAllAvailablePropertiesAsync(PropertyParams propertyParams);
 
-
+        Task<Pagination<PropertyDto>> GetPropertiesForAdminAsync(AdminPropertyParams adminPropertyParams);
     }
 }

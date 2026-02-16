@@ -9,6 +9,7 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Specifications.AutomatedNotificationSpec;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
@@ -27,6 +28,7 @@ namespace Makanak.Services.Services.BookingImplement
         UserManager<ApplicationUser> userManager, INotificationService notificationService)
         : IBookingService
     {
+
         public async Task<BookingDetailDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
         {
             #region check user status
@@ -36,7 +38,7 @@ namespace Makanak.Services.Services.BookingImplement
                 throw new BadRequestException("Account not verified.");
 
             #endregion
-            
+
             if (dto.CheckInDate >= dto.CheckOutDate)
                 throw new BadRequestException("Check-out date must be after check-in date.");
 

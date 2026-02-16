@@ -1,15 +1,9 @@
 ﻿using Makanak.Domain.Contracts;
 using Makanak.Domain.Contracts.Repos;
 using Makanak.Domain.Contracts.Specifications;
-using Makanak.Domain.Models;
 using Makanak.Persistance.Contexts;
 using Makanak.Persistance.Evaluator;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Makanak.Persistance.Implements.ReposImplement
 {

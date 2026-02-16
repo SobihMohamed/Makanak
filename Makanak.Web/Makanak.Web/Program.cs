@@ -1,5 +1,6 @@
 using Makanak.Abstraction.IServices.Cashing;
 using Makanak.Abstraction.IServices.Manager;
+using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Abstraction.IServices.RealTimeNotifier;
 using Makanak.Domain.Contracts.InitializerDB;
 using Makanak.Domain.Contracts.UOW;

@@ -76,5 +76,16 @@ namespace Makanak.Presentation.Controllers.Property_Controller
             return Success("Property Deleted Successfully");
         }
         #endregion
+
+        #region Admin
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin-all")]
+        public async Task<ActionResult<ApiResponse<Pagination<PropertyDto>>>> GetAllPropertiesForAdmin([FromQuery] AdminPropertyParams adminPropertyParams)
+        {
+            var properties = await serviceManager.PropertyServices.GetPropertiesForAdminAsync(adminPropertyParams);
+
+            return Success(properties);
+        }
+        #endregion
     }
 }

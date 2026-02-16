@@ -93,7 +93,6 @@ namespace Makanak.Services.Services.ManagerImplement
         public IAttachementServices AttachementServices => _attachementServices.Value;
         public IAuthService AuthService => _authService.Value;
         public IAdminServices AdminService => _adminService.Value;
-
         public IPropertyService PropertyServices => _propertyService.Value;
         public IPaymentService PaymentService => _paymentService.Value;
         public IBookingService BookingService=> _bookingService.Value;
