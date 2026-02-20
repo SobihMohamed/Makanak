@@ -28,13 +28,13 @@ namespace Makanak.Presentation.Controllers.Property_Controller
         #endregion
 
         #region Owner EndPoints
-        [HttpGet("my-properties")]
         [Authorize(Roles = "Owner")]
-        public async Task<ActionResult<ApiResponse<Pagination<PropertyDto>>>> GetMyProperties([FromQuery] PropertyParams propertyParams)
+        [HttpGet("my-properties")]
+        public async Task<ActionResult<ApiResponse<Pagination<PropertyDto>>>> GetMyProperties([FromQuery] OwnerPropertyParams ownerParams)
         {
             var ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var result = await serviceManager.PropertyServices.GetPropertiesByOwnerIdAsync(ownerId!, propertyParams);
+            var result = await serviceManager.PropertyServices.GetPropertiesByOwnerIdAsync(ownerId!, ownerParams);
 
             return Success(result);
         }

@@ -15,8 +15,6 @@ using Makanak.Shared.Dto_s.Property;
 using Makanak.Shared.EnumsHelper.Property;
 using Makanak.Shared.HelpersFactory;
 using Microsoft.AspNetCore.Identity;
-using System.Xml;
-
 
 namespace Makanak.Services.Services.PropertyImplement
 {
@@ -124,21 +122,21 @@ namespace Makanak.Services.Services.PropertyImplement
             return propertyDto;
         }
 
-        public async Task<Pagination<PropertyDto>> GetPropertiesByOwnerIdAsync(string ownerId, PropertyParams propertyParams)
+        public async Task<Pagination<PropertyDto>> GetPropertiesByOwnerIdAsync(string ownerId, OwnerPropertyParams ownerParams)
         {
             // 1. Get Repo
             var propertyRepo = _unitOfWork.GetRepo<Property, int>();
 
-            // 2. Prepare Specifications
-            var countSpecs = new PropertySpecifications(ownerId, propertyParams, isCount: true);
+            // 2. Prepare Specifications (Count)
+            var countSpecs = new OwnerPropertySpecifications(ownerId, ownerParams, isCount: true);
 
             var totalItems = await propertyRepo.CountAsync(countSpecs);
 
             if (totalItems == 0)
-                return new Pagination<PropertyDto>(propertyParams.PageIndex, propertyParams.PageSize, 0, new List<PropertyDto>());
+                return new Pagination<PropertyDto>(ownerParams.PageIndex, ownerParams.PageSize, 0, new List<PropertyDto>());
 
-            // 3. Get Data Specifications
-            var dataSpecs = new PropertySpecifications(ownerId, propertyParams, isCount: false);
+            // 3. Get Data Specifications (Data)
+            var dataSpecs = new OwnerPropertySpecifications(ownerId, ownerParams, isCount: false);
 
             var properties = await propertyRepo.GetAllWithSpecificationAsync(dataSpecs);
 
@@ -146,7 +144,7 @@ namespace Makanak.Services.Services.PropertyImplement
             var data = _mapper.Map<IReadOnlyList<PropertyDto>>(properties);
 
             // 5. Return Paginated Result
-            return new Pagination<PropertyDto>(propertyParams.PageIndex, propertyParams.PageSize, totalItems, data);
+            return new Pagination<PropertyDto>(ownerParams.PageIndex, ownerParams.PageSize, totalItems, data);
         }
 
         public async Task<PropertyDetailDto> GetPropertyDetailByIdAsync(int propertyId)
