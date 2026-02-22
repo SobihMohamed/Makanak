@@ -9,7 +9,6 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
-using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Specifications.AutomatedNotificationSpec;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
@@ -29,7 +28,7 @@ namespace Makanak.Services.Services.BookingImplement
         : IBookingService
     {
 
-        public async Task<BookingDetailDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
+        public async Task<TenantBookingDetailsDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
         {
             #region check user status
             var user = await userManager.FindByIdAsync(tenantId);
@@ -114,29 +113,7 @@ namespace Makanak.Services.Services.BookingImplement
             if (result <= 0)
                 throw new Exception("Failed to create booking.");
 
-            return mapper.Map<BookingDetailDto>(booking);
-        }
-
-        public async Task<BookingDetailDto> GetBookingByIdAsync(int bookingId , string UserId ,string role)
-        {
-            // generate specification
-            var spec = new BookingSpecifications(bookingId);
-
-            // get booking repo
-            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-
-            // get booking with specification
-            var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
-            
-            if (booking == null)
-                throw new BookingNotFound(bookingId);
-
-            // authorization check
-            if (booking.TenantId != UserId && booking.OwnerId != UserId && role != "Admin")
-                throw new UnauthorizedAccessException("You do not have permission to view this booking.");
-
-            return mapper.Map<BookingDetailDto>(booking);
-
+            return mapper.Map<TenantBookingDetailsDto>(booking);
         }
 
         public async Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams)
@@ -513,6 +490,39 @@ namespace Makanak.Services.Services.BookingImplement
             {
                 await unitOfWork.SaveChangesAsync();
             }
+        }
+
+        public async Task<TenantBookingDetailsDto> GetTenantBookingByIdAsync(int bookingId, string tenantId)
+        {
+            var spec = new BookingSpecifications(bookingId);
+            var booking = await unitOfWork.GetRepo<Booking, int>().GetByIdWithSpecificationsAsync(spec);
+
+            if (booking == null) throw new BookingNotFound(booking!.Id);
+            if (booking.TenantId != tenantId) throw new UnauthorizedAccessException("Not your booking");
+
+            var mappedData = mapper.Map<TenantBookingDetailsDto>(booking);
+
+            // لو لسه مدفعش، نخفي الداتا الحساسة
+            if (booking.Status == BookingStatus.PendingPayment || booking.Status == BookingStatus.PendingOwnerApproval)
+            {
+                mappedData.CheckInInstructions = "سيتم إظهار التعليمات بعد إتمام الدفع";
+                mappedData.ExactLocationUrl = null;
+                mappedData.OwnerPhoneNumber = null;
+                mappedData.CheckInQrCode = null;
+            }
+
+            return mappedData;
+        }
+
+        public async Task<OwnerBookingDetailsDto> GetOwnerBookingByIdAsync(int bookingId, string ownerId)
+        {
+            var spec = new BookingSpecifications(bookingId);
+            var booking = await unitOfWork.GetRepo<Booking, int>().GetByIdWithSpecificationsAsync(spec);
+
+            if (booking == null) throw new BookingNotFound(booking!.Id);
+            if (booking.Property.OwnerId != ownerId) throw new UnauthorizedAccessException("Not your property");
+
+            return mapper.Map<OwnerBookingDetailsDto>(booking);
         }
     }
 }

@@ -6,8 +6,6 @@ using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
-using Makanak.Services.AutoMapper.Resolver;
-using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Property_Params;

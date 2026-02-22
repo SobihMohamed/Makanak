@@ -2,6 +2,7 @@
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Booking_Params;
 using Makanak.Shared.Dto_s.Booking;
+using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,17 +28,26 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
             return Created(booking, "Booking created successfully");
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse<BookingDto>>> GetBookingById(int id)
+        [Authorize(Roles = "Tenant")]
+        [HttpGet("tenant/{id}")]
+        public async Task<ActionResult<ApiResponse<TenantBookingDetailsDto>>> GetBookingForTenant(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            var tenantId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var booking = await serviceManager.BookingService.GetBookingByIdAsync(id, userId, userRole);
+            var result = await serviceManager.BookingService.GetTenantBookingByIdAsync(id, tenantId!);
 
-            if (booking == null) return NotFoundError($"Booking with ID {id} not found");
+            return Success(result);
+        }
 
-            return Success(booking);
+        [Authorize(Roles = "Owner")]
+        [HttpGet("owner/{id}")]
+        public async Task<ActionResult<ApiResponse<OwnerBookingDetailsDto>>> GetBookingForOwner(int id)
+        {
+            var ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var result = await serviceManager.BookingService.GetOwnerBookingByIdAsync(id, ownerId!);
+
+            return Success(result);
         }
 
         [Authorize(Roles = "Tenant")]
@@ -103,7 +113,7 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
         [Authorize(Roles = "Tenant")]
         [HttpPost("{bookingId}/payment")]
-        public async Task<ActionResult<ApiResponse<BookingDto>>> CreateOrUpdatePaymentIntent(int bookingId)
+        public async Task<ActionResult<ApiResponse<BookingPaymentDto>>> CreateOrUpdatePaymentIntent(int bookingId)
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

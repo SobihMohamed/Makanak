@@ -11,16 +11,15 @@ namespace Makanak.Abstraction.IServices.Booking
 {
     public interface IBookingService
     {
-        Task<BookingDetailDto> CreateBookingAsync(CreateBookingDto dto, string tenantId);
+        Task<TenantBookingDetailsDto> CreateBookingAsync(CreateBookingDto dto, string tenantId);
 
         Task<bool> IsPropertyAvailableAsync(int propertyId, DateTime checkIn, DateTime checkOut);
 
         Task<Pagination<BookingDto>> GetTenantBookingsAsync(string tenantId, BookingSpecParams bookingParams);
 
         Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams);
-
-        Task<BookingDetailDto> GetBookingByIdAsync(int bookingId, string UserId, string role);
-
+        Task<TenantBookingDetailsDto> GetTenantBookingByIdAsync(int bookingId, string tenantId);
+        Task<OwnerBookingDetailsDto> GetOwnerBookingByIdAsync(int bookingId, string ownerId);
         Task<bool> CancelBookingAsync(int bookingId, string userId, string role);
 
         Task<ScanQrResponseDto> ScanQrCodeAsync(string qrCode, string ownerId);

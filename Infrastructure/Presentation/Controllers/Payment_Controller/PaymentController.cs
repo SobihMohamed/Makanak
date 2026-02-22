@@ -21,7 +21,7 @@ namespace Makanak.Presentation.Controllers.Payment_Controller
                 var result = await serviceManager.PaymentService.MapWebhookEvent(json, signature);
 
                 if (result == null)
-                    return BadRequestError("Stripe Signature Verification Failed");
+                    return BadRequest("Stripe Signature Verification Failed");
 
                 // 3. تحديث حالة الحجز بناءً على النتيجة
                 if (result.Status == "succeeded")
