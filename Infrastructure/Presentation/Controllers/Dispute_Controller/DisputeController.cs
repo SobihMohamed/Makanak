@@ -16,6 +16,7 @@ namespace Makanak.Presentation.Controllers.Dispute_Controller
     public class DisputeController(IServiceManager serviceManager) : AppBaseController
     {
         [HttpPost]
+        [Authorize(Roles = "Tenant, Owner")]
         public async Task<ActionResult<ApiResponse<DisputeDto>>> CreateDispute([FromForm] CreateDisputeDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

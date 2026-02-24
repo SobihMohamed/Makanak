@@ -1,4 +1,6 @@
-﻿using Makanak.Shared.Dto_s.Review;
+﻿using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params;
+using Makanak.Shared.Dto_s.Review;
 
 namespace Makanak.Abstraction.IServices.ReviewService
 {
@@ -6,7 +8,7 @@ namespace Makanak.Abstraction.IServices.ReviewService
     {
         Task<ReviewDto> AddReviewAsync(CreateReviewDto createReviewDto , string tenantId);
 
-        Task<IReadOnlyList<ReviewDto>> GetPropertyReviewsAsync(int propertyId);
+        Task<Pagination<ReviewDto>> GetPropertyReviewsAsync(int propertyId, BaseQueryParams queryParams);
 
         Task<bool> DeleteReviewAsync(int reviewId, string tenantId);
     }

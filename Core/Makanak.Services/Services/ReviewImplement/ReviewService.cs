@@ -10,6 +10,8 @@ using Makanak.Domain.Models.ReviewEntities;
 using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.ReviewSpec;
+using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params;
 using Makanak.Shared.Dto_s.Review;
 using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.HelpersFactory;
@@ -76,21 +78,20 @@ namespace Makanak.Services.Services.ReviewImplement
             return mapper.Map<ReviewDto>(review);
 
         }
-        public async Task<IReadOnlyList<ReviewDto>> GetPropertyReviewsAsync(int propertyId)
+        public async Task<Pagination<ReviewDto>> GetPropertyReviewsAsync(int propertyId, BaseQueryParams queryParams)
         {
-            // get the repo of the review 
             var reviewRepo = unitOfWork.GetRepo<Review, int>();
 
-            // get the specifications of the review 
-            var reviewSpec = new ReviewSpecifications(propertyId , IsPropertyReviews:true);
-
-            // get the reviews of the property 
+            var reviewSpec = new ReviewSpecifications(propertyId, queryParams);
             var propertyReviews = await reviewRepo.GetAllWithSpecificationAsync(reviewSpec);
 
-            // return with the dto 
+            // 2. Count Specification 
+            var countSpec = new ReviewWithCountSpecification(propertyId);
+            var totalItems = await reviewRepo.CountAsync(countSpec);
 
-            return mapper.Map<IReadOnlyList<ReviewDto>>(propertyReviews);
+            var data = mapper.Map<IReadOnlyList<ReviewDto>>(propertyReviews);
 
+            return new Pagination<ReviewDto>(queryParams.PageIndex, queryParams.PageSize, totalItems, data);
         }
         public async Task<bool> DeleteReviewAsync(int reviewId, string tenantId)
         {

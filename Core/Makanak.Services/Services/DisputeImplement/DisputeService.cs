@@ -13,6 +13,7 @@ using Makanak.Services.Specifications.DisputesSpec;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Dispute_Params;
 using Makanak.Shared.Dto_s.Dispute;
+using Makanak.Shared.EnumsHelper.Booking;
 using Makanak.Shared.EnumsHelper.Dispute;
 using Makanak.Shared.HelpersFactory;
 using Microsoft.AspNetCore.Identity;
@@ -28,40 +29,57 @@ namespace Makanak.Services.Services.DisputeImplement
     {
         public async Task<DisputeDto> CreateDisputeAsync(CreateDisputeDto dto, string userId)
         {
-            // get booking 
+            // 1. Get booking 
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
             var booking = await bookingRepo.GetByIdAsync(dto.BookingId);
             if (booking == null)
                 throw new BookingNotFound(dto.BookingId);
 
-            if(userId != booking.Owner.Id &&  userId != booking.TenantId)
+            // 2. Authorization
+            if (userId != booking.OwnerId && userId != booking.TenantId)
                 throw new UnauthorizedException();
 
+            if (booking.Status != BookingStatus.PaymentReceived &&
+                booking.Status != BookingStatus.CheckedIn &&
+                booking.Status != BookingStatus.Completed)
+            {
+                throw new BadRequestException("Disputes can only be opened for paid, checked-in, or completed bookings.");
+            }
+
+            var disputeRepo = unitOfWork.GetRepo<Dispute, int>();
+
+            var pendingDisputeSpec = new PendingDisputeByBookingSpecification(dto.BookingId);
+            var existingDisputes = await disputeRepo.GetAllWithSpecificationAsync(pendingDisputeSpec);
+
+            if (existingDisputes.Any(d => d.ComplainantId == userId))
+            {
+                throw new BadRequestException("You already have a pending dispute for this booking.");
+            }
+
+            // 3. Mapping
             var dispute = mapper.Map<Dispute>(dto);
             dispute.ComplainantId = userId;
             dispute.Status = DisputeStatus.Pending;
 
+            // 4. Image Upload (آمن دلوقتي)
             if (dto.Images != null && dto.Images.Count > 0)
             {
-                // uploads/Disputes/Booking_55
+                dispute.DisputeImages ??= new List<DisputeImage>();
                 string folderName = $"Booking_{dto.BookingId}";
                 string path = Path.Combine("Disputes", folderName);
 
                 foreach (var file in dto.Images)
                 {
                     var url = await attachementServices.UploadImageAsync(file, path);
-                    dispute.DisputeImages.Add(new DisputeImage
-                    {
-                        ImageUrl = url
-                    });
+                    dispute.DisputeImages.Add(new DisputeImage { ImageUrl = url });
                 }
             }
 
-            // dispute repo 
-            var disputeRepo = unitOfWork.GetRepo<Dispute, int>();
+            // 5. Save
             disputeRepo.AddAsync(dispute);
             await unitOfWork.SaveChangesAsync();
 
+            // 6. Notifications
             var admins = await userManager.GetUsersInRoleAsync("Admin");
             var complainantUser = await userManager.FindByIdAsync(userId);
             string complainantName = complainantUser?.Name ?? "Unknown User";
@@ -69,18 +87,12 @@ namespace Makanak.Services.Services.DisputeImplement
             foreach (var admin in admins)
             {
                 await notificationService.SendNotificationAsync(
-                NotificationFactory.NewDisputeCreated(
-                    admin.Id,           
-                    complainantName,    
-                    dispute.BookingId,  
-                    dispute.Id          
-                )
-            );
+                    NotificationFactory.NewDisputeCreated(admin.Id, complainantName, dispute.BookingId, dispute.Id)
+                );
             }
 
             return mapper.Map<DisputeDto>(dispute);
         }
-
         public async Task<Pagination<DisputeDto>> GetAllDisputesAsync(DisputeParams disputeParams, string userId, string role)
         {
             var repo = unitOfWork.GetRepo<Dispute, int>();
@@ -98,11 +110,13 @@ namespace Makanak.Services.Services.DisputeImplement
             return new Pagination<DisputeDto>(disputeParams.PageIndex, disputeParams.PageSize, totalItems, data);
         }
 
-        public async Task<DisputeDto> GetDisputeByIdAsync(int disputeId, string userId , string role)
+        public async Task<DisputeDto> GetDisputeByIdAsync(int disputeId, string userId, string role)
         {
             var repo = unitOfWork.GetRepo<Dispute, int>();
             var spec = new DisputeSpecifications(disputeId);
             var dispute = await repo.GetByIdWithSpecificationsAsync(spec);
+
+            if (dispute == null) throw new DisputeNotFound(disputeId);
 
             bool isAuthorized = (userId == dispute.Booking.OwnerId) ||
                         (userId == dispute.Booking.TenantId) ||

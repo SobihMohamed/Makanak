@@ -6,18 +6,29 @@ using System.Threading.Tasks;
 
 namespace Makanak.Shared.EnumsHelper.Dispute
 {
+    using System.ComponentModel;
+
     public enum DisputeReason
     {
-        PropertyNotAsDescribed = 1, // العقار غير مطابق للصور
-        CheckInIssue = 2,           // مشكلة في الدخول (المفتاح مش موجود مثلاً)
-        CleanlinessIssue = 3,       // المكان مش نضيف
-        HostUnreachable = 4,        // المالك مبردش
+        // Tenant Reasons
+        [Description("Property is not as described or matches photos")]
+        PropertyNotAsDescribed = 1,
 
-        // أسباب للمالك
-        DamageToProperty = 5,       // المستأجر كسر حاجة
-        GuestDidNotLeave = 6,       // المستأجر ممشيش في الميعاد
-        PartyOrNoise = 7,           // عمل دوشة وحفلات ممنوعة
+        [Description("Check-in or key handover issue")]
+        CheckInIssue = 2,
 
-        Other = 99// سبب آخر
+        [Description("Cleanliness issue")]
+        CleanlinessIssue = 3,
+
+        [Description("Host is unreachable")]
+        HostUnreachable = 4,
+
+        // Owner Reasons
+        [Description("Damage to property or belongings")]
+        DamageToProperty = 5,
+
+        // Common
+        [Description("Other")]
+        Other = 99
     }
 }

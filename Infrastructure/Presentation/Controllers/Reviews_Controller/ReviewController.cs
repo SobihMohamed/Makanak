@@ -1,4 +1,6 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
+using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params;
 using Makanak.Shared.Dto_s.Review;
 using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
@@ -23,11 +25,11 @@ namespace Makanak.Presentation.Controllers.Reviews_Controller
             return Created(result, "Review submitted successfully.");
         }
 
-        [AllowAnonymous] 
+        [AllowAnonymous]
         [HttpGet("{propertyId}")]
-        public async Task<ActionResult<ApiResponse<IReadOnlyList<ReviewDto>>>> GetPropertyReviews(int propertyId)
+        public async Task<ActionResult<ApiResponse<Pagination<ReviewDto>>>> GetPropertyReviews(int propertyId, [FromQuery] BaseQueryParams BaseQueryParams)
         {
-            var result = await serviceManager.ReviewService.GetPropertyReviewsAsync(propertyId);
+            var result = await serviceManager.ReviewService.GetPropertyReviewsAsync(propertyId, BaseQueryParams);
 
             return Success(result);
         }

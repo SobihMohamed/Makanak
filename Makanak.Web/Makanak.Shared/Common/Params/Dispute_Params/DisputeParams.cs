@@ -5,10 +5,11 @@ using System.Text;
 
 namespace Makanak.Shared.Common.Params.Dispute_Params
 {
-    public class DisputeParams : QueryParams
+    public class DisputeParams : BaseQueryParams
     {
         public DisputeStatus? Status { get; set; }
-
         public int? BookingId { get; set; }
+
+        public DisputeSortEnum? Sort { get; set; }
     }
 }

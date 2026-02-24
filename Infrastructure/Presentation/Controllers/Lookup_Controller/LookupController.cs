@@ -40,17 +40,46 @@ namespace Makanak.Presentation.Controllers.Lookup_Controller
         public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetPropertyTypes()
             => Success(EnumResolver.GetEnumList<PropertyType>());
 
-        [HttpGet("dispute-reasons")]
-        public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetDisputeReasons()
-            => Success(EnumResolver.GetEnumList<DisputeReason>());
-
         [HttpGet("booking-statuses")]
         public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetBookingStatuses()
             => Success(EnumResolver.GetEnumList<BookingStatus>());
 
-        [HttpGet("dispute-statuses")]
-        public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetDisputeStatuses()
-            => Success(EnumResolver.GetEnumList<DisputeStatus>());
+        [HttpGet("owner-dispute-reasons")]
+        public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetOwnerDisputeReasons()
+        {
+            var allReasons = EnumResolver.GetEnumList<DisputeReason>();
+
+            var ownerAllowedIds = new[]
+            {
+                (int)DisputeReason.DamageToProperty,
+                (int)DisputeReason.Other
+            };
+
+            var ownerReasons = allReasons.Where(r => ownerAllowedIds.Contains(r.Id));
+            return Success(ownerReasons);
+        }
+
+        [HttpGet("tenant-dispute-reasons")]
+        public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetTenantDisputeReasons()
+        {
+            var allReasons = EnumResolver.GetEnumList<DisputeReason>();
+
+            var tenantAllowedIds = new[]
+            {
+                (int)DisputeReason.PropertyNotAsDescribed,
+                (int)DisputeReason.CheckInIssue,
+                (int)DisputeReason.CleanlinessIssue,
+                (int)DisputeReason.HostUnreachable,
+                (int)DisputeReason.Other
+            };
+
+            var tenantReasons = allReasons.Where(r => tenantAllowedIds.Contains(r.Id));
+            return Success(tenantReasons);
+        }
+
+        [HttpGet("all-dispute-reasons")]
+        public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetAllDisputeReasons()
+            =>Success(EnumResolver.GetEnumList<DisputeReason>());
 
         [HttpGet("property-statuses")]
         public ActionResult<ApiResponse<IEnumerable<EnumLookupDto>>> GetPropertyStatuses()
