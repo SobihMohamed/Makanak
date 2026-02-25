@@ -5,6 +5,7 @@ using Makanak.Abstraction.IServices.AmenityService;
 using Makanak.Abstraction.IServices.Auth;
 using Makanak.Abstraction.IServices.Booking;
 using Makanak.Abstraction.IServices.Cashing;
+using Makanak.Abstraction.IServices.DashboardService;
 using Makanak.Abstraction.IServices.DisputeService;
 using Makanak.Abstraction.IServices.GovernorateService;
 using Makanak.Abstraction.IServices.Manager;
@@ -19,6 +20,7 @@ using Makanak.Services.Services.Admin;
 using Makanak.Services.Services.AmenityImplement;
 using Makanak.Services.Services.Auth;
 using Makanak.Services.Services.BookingImplement;
+using Makanak.Services.Services.DashboardImplementaion;
 using Makanak.Services.Services.DisputeImplement;
 using Makanak.Services.Services.GovernorateImplement;
 using Makanak.Services.Services.NotificationImplement;
@@ -44,10 +46,12 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IPaymentService> _paymentService;
         private readonly Lazy<IReviewService> _reviewService;
         private readonly Lazy<IDisputeService> _disputeService;
+        private readonly Lazy<IAdminDashboardService> _dashboardService;
         private readonly Lazy<INotificationService> _notificationService;
         private readonly Lazy<IAmenityService> _amenityService;
         private readonly Lazy<IGovernorateService> _governorateService;
-        public ServiceManager(IUnitOfWork _Uow,IMapper mapper,
+        public ServiceManager(
+            IUnitOfWork _Uow,IMapper mapper,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             IOptions<StripeSettings> options,
@@ -87,6 +91,8 @@ namespace Makanak.Services.Services.ManagerImplement
             
             _governorateService = new Lazy<IGovernorateService>(() => new GovernorateService(cacheService, _Uow, mapper));
 
+            _dashboardService = new Lazy<IAdminDashboardService>(() => new AdminDashboardService(_Uow));
+
 
         }
         public IEmailService EmailService => _emailService.Value;
@@ -98,6 +104,7 @@ namespace Makanak.Services.Services.ManagerImplement
         public IBookingService BookingService=> _bookingService.Value;
         public IReviewService ReviewService=> _reviewService.Value;
         public IDisputeService DisputeService => _disputeService.Value;
+        public IAdminDashboardService AdminDashboardService => _dashboardService.Value;
         public IAmenityService AmenityService=> _amenityService.Value;
         public IGovernorateService GovernorateService => _governorateService.Value;
         public INotificationService NotificationService=> _notificationService.Value;

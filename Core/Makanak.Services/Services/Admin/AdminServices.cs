@@ -120,40 +120,6 @@ namespace Makanak.Services.Services.Admin
             return userVerificationDetailsDto;
         }
 
-        public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
-        {
-            var userRepo = _unitOfWork.GetRepo<ApplicationUser, string>();
-
-            async Task<int> GetCount(UserStatus? status = null, UserTypes? type = null)
-            {
-                var parameters = new UserParams
-                {
-                    Status = status,
-                    Type = type
-                };
-                // isCount = true to get only the count without pagination and sorting
-                var spec = new UserSpecifications(parameters, isCount: true);
-                return await userRepo.CountAsync(spec);
-            }
-            var stats = new AdminDashboardStatsDto
-            {
-             
-                TotalUsers = await GetCount(status: null, type: null),
-                
-                PendingUsers = await GetCount(status: UserStatus.Pending),
-                ActiveUsers = await GetCount(status: UserStatus.Active),
-                RejectsCount = await GetCount(status: UserStatus.Rejected),
-                BannedsCount = await GetCount(status: UserStatus.Banned), 
-                NewsCount = await GetCount(status: UserStatus.New),
-
-                OwnersCount = await GetCount(type: UserTypes.Owner),
-                AdminsCount = await GetCount(type: UserTypes.Admin),
-                TenantsCount = await GetCount(type: UserTypes.Tenant)
-            };
-
-            return stats;
-        }
-
         public async Task<bool> UpdatePropertyStatus(UpdatePropertyStatusDto dto)
         {
             var propRepo = _unitOfWork.GetRepo<Property, int>();

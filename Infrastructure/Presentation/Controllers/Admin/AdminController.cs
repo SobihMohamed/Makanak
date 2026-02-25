@@ -45,12 +45,5 @@ namespace Makanak.Presentation.Controllers.Admin
             var userDetails = await serviceManager.AdminService.GetUserVerificationDetails(userId);
             return Success(userDetails, "User verification details retrieved successfully");
         }
-
-        [HttpGet("stats")]
-        public async Task<ActionResult<ApiResponse<AdminDashboardStatsDto>>> GetDashboardStats()
-        {
-            var stats = await serviceManager.AdminService.GetDashboardStatsAsync();
-            return Success(stats, "Admin Dashboard Statistics retrieved successfully");
-        }
     }
 }

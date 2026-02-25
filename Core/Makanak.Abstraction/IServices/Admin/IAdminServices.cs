@@ -18,6 +18,5 @@ namespace Makanak.Abstraction.IServices.Admin
 
         Task<bool> UpdatePropertyStatus(UpdatePropertyStatusDto dto);
 
-        Task<AdminDashboardStatsDto> GetDashboardStatsAsync();
     }
 }
