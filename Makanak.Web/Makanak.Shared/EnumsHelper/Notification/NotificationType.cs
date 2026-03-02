@@ -49,8 +49,9 @@ namespace Makanak.Domain.EnumsHelper.Notification
 
         // --- Background services
         PaymentWarning = 23,
-        CheckInReminder = 24
+        CheckInReminder = 24,
 
-
+        StrikeAdded = 25,         // تم إضافة strike لحسابك
+        StrikeRemoved = 26,       // تم إزالة strike من حسابك
     }
 }

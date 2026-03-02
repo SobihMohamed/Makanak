@@ -1,4 +1,5 @@
 ﻿using Makanak.Domain.Contracts.InitializerDB;
+using Makanak.Domain.Models.Identity;
 using Makanak.Persistance.Contexts;
 using Makanak.Persistance.Seeds;
 using Microsoft.AspNetCore.Identity;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Makanak.Persistance.Implements.InitializerImplement
 {
-    public class DbInitialized(MakanakDbContext makanakDbContext , RoleManager<IdentityRole> roleManager) : IDbInitializer
+    public class DbInitialized(MakanakDbContext makanakDbContext , RoleManager<IdentityRole> roleManager , UserManager<ApplicationUser> userManager) : IDbInitializer
     {
         public async Task DataSeedAsync()
         {
@@ -23,11 +24,11 @@ namespace Makanak.Persistance.Implements.InitializerImplement
             }
             await SeederAsync.SeedRolesAsync(roleManager);
 
+            await SeederAsync.SeedAdminsAsync(userManager);
+
             await SeederAsync.SeedAmenitiesAsync(makanakDbContext);
 
             await SeederAsync.SeedGovernoraets(makanakDbContext);
-
-            await SeederAsync.SeedPropertiesAsync(makanakDbContext);
         }
     }
 }

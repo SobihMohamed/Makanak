@@ -12,14 +12,15 @@ using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Services.Specifications.User;
 using Makanak.Shared.Common;
-using Makanak.Shared.Common.Params;
 using Makanak.Shared.Common.Params.User;
 using Makanak.Shared.Dto_s.Admin;
 using Makanak.Shared.EnumsHelper.Property;
 using Makanak.Shared.HelpersFactory;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Stripe;
+using System.Runtime.InteropServices;
+
 
 
 namespace Makanak.Services.Services.Admin
@@ -186,6 +187,101 @@ namespace Makanak.Services.Services.Admin
             }
 
             return false;
+        }
+
+        public async Task<bool> AddStrikeToUserAsync(string userId)
+        {
+            var userRepository = _unitOfWork.GetRepo<ApplicationUser, string>();
+            var userSpec = new UserSpecifications(userId);
+            var user = await userRepository.GetByIdWithSpecificationsAsync(userSpec);
+
+            if (user == null)
+                throw UserNotFoundException.ById(userId);
+
+            user.StrikeCount++;
+
+            if (user.StrikeCount >= 3)
+            {
+                user.UserStatus = UserStatus.Banned;
+                user.RejectedReason = "Account banned due to exceeding maximum strike count (3 strikes).";
+            }
+
+            userRepository.Update(user);
+            var res = await _unitOfWork.SaveChangesAsync();
+
+            if (res > 0)
+            {
+                try
+                {
+                    string emailBody = user.UserStatus == UserStatus.Banned
+                        ? "⚠️ ALERT: Your account has been <b>BANNED</b> due to accumulating 3 strikes.<br/>Please contact support for more information."
+                        : $"You have received a strike from the administration. Current strike count: {user.StrikeCount}/3. Accumulating 3 strikes will result in a ban.";
+
+                    await emailService.SendEmailAsync(user.Email, "Makanak - Strike Notification", emailBody);
+
+                    // استخدمنا الـ Factory هنا
+                    var notification = NotificationFactory
+                        .StrikeAdded(user.Id, user.StrikeCount, user.UserStatus == UserStatus.Banned);
+                    await notificationService.SendNotificationAsync(notification);
+                }
+                catch (Exception ex)
+                {
+                    //_logger.LogError(ex, "Failed to send strike notification.");
+                }
+                return true;
+            }
+
+            return false; 
+        }
+
+        public async Task<bool> RemoveStrikeFromUserAsync(string userId)
+        {
+            var userRepository = _unitOfWork.GetRepo<ApplicationUser, string>();
+            var userSpec = new UserSpecifications(userId);
+            var user = await userRepository.GetByIdWithSpecificationsAsync(userSpec);
+
+            if (user == null)
+                throw UserNotFoundException.ById(userId);
+
+            if (user.StrikeCount > 0)
+            {
+                user.StrikeCount--;
+                bool isUnbanned = false;
+
+                if (user.StrikeCount < 3 && user.UserStatus == UserStatus.Banned)
+                {
+                    user.UserStatus = UserStatus.Active;
+                    user.RejectedReason = string.Empty;
+                    isUnbanned = true;
+                }
+
+                userRepository.Update(user);
+                var res = await _unitOfWork.SaveChangesAsync();
+
+                if (res > 0)
+                {
+                    try
+                    {
+                        string emailBody = isUnbanned
+                            ? "✅ Good news! A strike has been removed from your account, and your account is now <b>ACTIVE</b> again."
+                            : $"A strike has been removed from your account. Current strike count: {user.StrikeCount}/3.";
+
+                        await emailService.SendEmailAsync(user.Email, "Makanak - Strike Removed", emailBody);
+
+                        var notification = NotificationFactory
+                            .StrikeRemoved(user.Id, user.StrikeCount, isUnbanned);
+                        await notificationService.SendNotificationAsync(notification);
+                    }
+                    catch (Exception ex)
+                    {
+                        // _logger.LogError(ex, "Failed to send strike removal notification.");
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            return true;
         }
     }
 }

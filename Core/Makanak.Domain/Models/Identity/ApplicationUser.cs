@@ -6,7 +6,6 @@ using Makanak.Domain.Models.NotifyEnities;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Domain.Models.ReviewEntities;
 using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Makanak.Domain.Models.Identity
 {

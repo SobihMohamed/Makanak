@@ -1,11 +1,12 @@
 ﻿using Makanak.Domain.EnumsHelper.User; 
+using Makanak.Domain.Exceptions.NotFound;
+using Makanak.Domain.Models.Identity;
+using Makanak.Domain.Models.LocationEntities;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Persistance.Contexts;
 using Microsoft.AspNetCore.Identity;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Makanak.Domain.Models.LocationEntities;
-using Makanak.Domain.Exceptions.NotFound;
+using System.Text.Json;
 
 namespace Makanak.Persistance.Seeds
 {
@@ -22,6 +23,61 @@ namespace Makanak.Persistance.Seeds
             }
         }
 
+        public static async Task SeedAdminsAsync(UserManager<ApplicationUser> userManager)
+        {
+            string adminRole = UserTypes.Admin.ToString();
+
+            var admins = await userManager.GetUsersInRoleAsync(adminRole);
+
+            if (!admins.Any())
+            {
+                var adminUsers = new List<ApplicationUser>
+                {
+                    new ApplicationUser
+                    { 
+                        UserStatus = UserStatus.Active,
+                        DateOfBirth = new DateTime(2004, 8, 5),
+                        UserType = UserTypes.Admin,
+                        Name = "Sobih Mohamed",
+                        UserName = "SOBIHMOHAMEDSOBIH@GMAIL.COM",
+                        Email = "sobihmohamedsobih@gmail.com",
+                        EmailConfirmed = true,
+                    },
+                    new ApplicationUser
+                    {
+                        UserStatus = UserStatus.Active,
+                        DateOfBirth = new DateTime(2004, 7, 17),
+                        UserType = UserTypes.Admin,
+                        Name = "Mohamed Nagy",
+                        UserName = "NAGYNADY1976@GMAIL.COM",
+                        Email = "nagynady1976@gamil.com",
+                        EmailConfirmed = true,
+                    },
+                    new ApplicationUser
+                    {
+                        UserStatus = UserStatus.Active,
+                        DateOfBirth = new DateTime(2004, 11, 28),
+                        UserType = UserTypes.Admin,
+                        Name = "Mohamed Abdelhaleem",
+                        UserName = "MOHAMEDHALEEM571@GMAIL.COM",
+                        Email = "mohamedhaleem571@gmail.com",
+                        EmailConfirmed = true,
+                    }
+                };
+
+                string defaultPassword = "Admin@12345";
+
+                foreach (var admin in adminUsers)
+                {
+                    var result = await userManager.CreateAsync(admin, defaultPassword);
+
+                    if (result.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(admin, adminRole);
+                    }
+                }
+            }
+        }
         public static async Task SeedGovernoraets(MakanakDbContext context)
         {
             if (!await context.Set<Governorate>().AnyAsync())
@@ -63,45 +119,6 @@ namespace Makanak.Persistance.Seeds
                         await context.Set<Amenity>().AddRangeAsync(amenities);
                         await context.SaveChangesAsync();
                     }
-                }
-            }
-        }
-
-        public static async Task SeedPropertiesAsync(MakanakDbContext context)
-        {
-            if (!await context.Set<Property>().AnyAsync())
-            {
-                var firstUser = await context.Users.FirstOrDefaultAsync();
-                if (firstUser == null) return;
-
-                var buildPath = AppDomain.CurrentDomain.BaseDirectory;
-                var filePath = Path.Combine(buildPath, "Data", "Seeds", "properties.json");
-
-                if (File.Exists(filePath))
-                {
-                    var propertiesData = await File.ReadAllTextAsync(filePath);
-                    var properties = JsonSerializer.Deserialize<List<Property>>(propertiesData);
-
-                    if (properties?.Count > 0)
-                    {
-                        foreach (var prop in properties)
-                        {
-                            // ربط العقار باليوزر الموجود
-                            prop.OwnerId = firstUser.Id;
-
-                            // بيانات Audit
-                            prop.CreatedBy = "Seeder";
-
-                            prop.MainImageUrl = "uploads/Default_Image.png";
-                        }
-
-                        await context.Set<Property>().AddRangeAsync(properties);
-                        await context.SaveChangesAsync();
-                    }
-                }
-                else
-                {
-                    throw new FileNotFound(filePath);
                 }
             }
         }

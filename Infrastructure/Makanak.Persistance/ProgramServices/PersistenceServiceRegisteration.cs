@@ -24,7 +24,14 @@ namespace Makanak.Persistance.ProgramServices
             // بس بتضيف بقا ال [identiyRole] لوحدها 
             // وبتزود كمان ال [AddDefaultTokenProvider] and [Service.AddDataProtection] 
             //  عشان تشتغل مع ال Roles وال Password Reset و ال Email Confirmation
-            services.AddIdentityCore<ApplicationUser>()
+            services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireUppercase = true;
+            })
              .AddRoles<IdentityRole>() // عشان تشغل الـ Roles
              .AddEntityFrameworkStores<MakanakDbContext>()
              .AddDefaultTokenProviders();

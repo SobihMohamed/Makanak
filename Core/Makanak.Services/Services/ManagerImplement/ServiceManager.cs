@@ -75,7 +75,7 @@ namespace Makanak.Services.Services.ManagerImplement
                 _notificationService.Value
             ));
 
-            _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration,_notificationService.Value));
+            _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration ,_notificationService.Value));
             
             _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,_attachementServices.Value, _Uow,_notificationService.Value));
 

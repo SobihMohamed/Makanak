@@ -68,7 +68,7 @@ namespace Makanak.Services.Services.PaymentImplement
         public Task<BookingPaymentDto> MapWebhookEvent(string json, string signature)
         {
             // CLI send the Whsecret
-            const string WhSecret = "whsec_ee8e7f99b971a4361b211d5889a545898fb8b65ae4a0b66e4f2a0eb1028fa53f";
+            const string WhSecret = "whsec_e9y0SToZkXY8DMoI5COm72mq9wv3upMg";
 
             try
             {

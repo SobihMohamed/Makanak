@@ -235,6 +235,40 @@ namespace Makanak.Shared.HelpersFactory
             };
         }
        
+        public static CreateNotificationDto StrikeAdded(string userId, int currentStrikes, bool isBanned)
+        {
+            string title = isBanned ? "Account Suspended 🚫" : "Warning: Strike Received ⚠️";
+            string message = isBanned
+                ? "Your account has been suspended due to receiving 3 strikes."
+                : $"You have received a strike from the administration. You currently have {currentStrikes}/3 strikes.";
+
+            return new CreateNotificationDto
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                ReferenceId = userId,
+                NotificationType = NotificationType.StrikeAdded
+            };
+        }
+
+        public static CreateNotificationDto StrikeRemoved(string userId, int currentStrikes, bool isUnbanned)
+        {
+            string title = isUnbanned ? "Account Reactivated ✅" : "Strike Removed ✨";
+            string message = isUnbanned
+                ? "A strike was removed and your account has been reactivated!"
+                : $"A strike was removed from your account. You currently have {currentStrikes}/3 strikes.";
+
+            return new CreateNotificationDto
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                ReferenceId = userId,
+                NotificationType = NotificationType.StrikeRemoved
+            };
+        }
+        
         public static CreateNotificationDto NewDisputeCreated(string adminId, string complainantName, int bookingId, int disputeId)
         {
             return new CreateNotificationDto

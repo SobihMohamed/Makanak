@@ -45,5 +45,24 @@ namespace Makanak.Presentation.Controllers.Admin
             var userDetails = await serviceManager.AdminService.GetUserVerificationDetails(userId);
             return Success(userDetails, "User verification details retrieved successfully");
         }
+
+        [HttpPost("users/{userId}/strike")]
+        public async Task<ActionResult<ApiResponse<string>>> AddStrike([FromRoute] string userId)
+        {
+            var res = await serviceManager.AdminService.AddStrikeToUserAsync(userId);
+            if (!res) return BadRequest("Failed to add strike to user. Please try again.");
+
+            return Success("Strike added to user successfully.");
+        }
+
+        // (Remove Strike)
+        [HttpDelete("users/{userId}/strike")]
+        public async Task<ActionResult<ApiResponse<string>>> RemoveStrike([FromRoute] string userId)
+        {
+            var res = await serviceManager.AdminService.RemoveStrikeFromUserAsync(userId);
+            if (!res) return BadRequest("Failed to remove strike from user. Please try again.");
+
+            return Success("Strike removed from user successfully.");
+        }
     }
 }

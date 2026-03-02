@@ -18,5 +18,8 @@ namespace Makanak.Abstraction.IServices.Admin
 
         Task<bool> UpdatePropertyStatus(UpdatePropertyStatusDto dto);
 
+        Task<bool> AddStrikeToUserAsync(string userId);
+
+        Task<bool> RemoveStrikeFromUserAsync(string userId);
     }
 }
