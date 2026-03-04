@@ -17,6 +17,7 @@ namespace Makanak.Services.AutoMapper.Admin
                 .ForMember(Dest => Dest.UserId, options => options.MapFrom(src => src.Id))
                 .ForMember(Dest => Dest.JoinAt, options => options.MapFrom(src => src.CreatedAt))
                 .ForMember(Dest => Dest.UserStatus , options=> options.MapFrom(src=>src.UserStatus.ToString()))
+                .ForMember(Dest => Dest.StrikeCount , options => options.MapFrom(src => src.StrikeCount))
                 .ForMember(Dest => Dest.UserType , options=> options.MapFrom(src=>src.UserType.ToString()));
 
             CreateMap<ApplicationUser, UserVerificationDetailsDto>()
