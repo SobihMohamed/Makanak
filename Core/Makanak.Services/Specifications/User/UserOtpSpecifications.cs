@@ -1,0 +1,21 @@
+﻿using Makanak.Domain.Models.ResetPassword;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Text;
+
+namespace Makanak.Services.Specifications.User
+{
+    public class UserOtpSpecifications : BaseSpecifications<UserOtp, int>
+    {
+        public UserOtpSpecifications(string email) :
+            base(U_Otp => U_Otp.Email == email && U_Otp.IsUsed == false)
+        {
+        }
+
+        public UserOtpSpecifications(string email, string otpCode)
+        : base(U_Otp => U_Otp.Email == email && U_Otp.OtpCode == otpCode && U_Otp.IsUsed == false)
+        {
+        }
+    }
+}

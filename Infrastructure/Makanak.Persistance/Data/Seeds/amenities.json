@@ -1,0 +1,104 @@
+﻿[
+  {
+    "NameEn": "WiFi",
+    "NameAr": "واي فاي",
+    "Description": "High-speed wireless internet access available throughout the property.",
+    "Icon": "fa-solid fa-wifi"
+  },
+  {
+    "NameEn": "Swimming Pool",
+    "NameAr": "حمام سباحة",
+    "Description": "Private or shared swimming pool suitable for relaxation.",
+    "Icon": "fa-solid fa-water-ladder"
+  },
+  {
+    "NameEn": "Air Conditioning",
+    "NameAr": "تكييف هواء",
+    "Description": "Full air conditioning in all rooms to ensure comfort.",
+    "Icon": "fa-solid fa-snowflake"
+  },
+  {
+    "NameEn": "Free Parking",
+    "NameAr": "موقف سيارات مجاني",
+    "Description": "Secure and free parking spot available on premises.",
+    "Icon": "fa-solid fa-square-parking"
+  },
+  {
+    "NameEn": "BBQ Grill",
+    "NameAr": "شواية باربكيو",
+    "Description": "Outdoor barbecue grill available for use.",
+    "Icon": "fa-solid fa-fire-burner"
+  },
+  {
+    "NameEn": "Kitchen",
+    "NameAr": "مطبخ",
+    "Description": "Fully equipped kitchen with appliances and cookware.",
+    "Icon": "fa-solid fa-kitchen-set"
+  },
+  {
+    "NameEn": "TV",
+    "NameAr": "تليفيزيون",
+    "Description": "Smart TV with access to streaming services.",
+    "Icon": "fa-solid fa-tv"
+  },
+  {
+    "NameEn": "Washing Machine",
+    "NameAr": "غسالة ملابس",
+    "Description": "In-unit washing machine for your laundry needs.",
+    "Icon": "fa-solid fa-shirt"
+  },
+  {
+    "NameEn": "Elevator",
+    "NameAr": "مصعد",
+    "Description": "Building has an elevator for easy access to your floor.",
+    "Icon": "fa-solid fa-elevator"
+  },
+  {
+    "NameEn": "Gym",
+    "NameAr": "صالة رياضية",
+    "Description": "Access to a fully equipped fitness center.",
+    "Icon": "fa-solid fa-dumbbell"
+  },
+  {
+    "NameEn": "Balcony or Terrace",
+    "NameAr": "بلكونة أو تراس",
+    "Description": "Private outdoor space to enjoy the view.",
+    "Icon": "fa-solid fa-cloud-sun"
+  },
+  {
+    "NameEn": "Sea View",
+    "NameAr": "إطلالة على البحر",
+    "Description": "Property offers a direct or partial view of the sea.",
+    "Icon": "fa-solid fa-water"
+  },
+  {
+    "NameEn": "Security Cameras",
+    "NameAr": "كاميرات مراقبة",
+    "Description": "24/7 security cameras on the premises for your safety.",
+    "Icon": "fa-solid fa-video"
+  },
+  {
+    "NameEn": "Dedicated Workspace",
+    "NameAr": "مساحة عمل",
+    "Description": "A desk and comfortable chair for remote work.",
+    "Icon": "fa-solid fa-laptop-house"
+  },
+  {
+    "NameEn": "Pet Friendly",
+    "NameAr": "مسموح بالحيوانات الأليفة",
+    "Description": "Pets are welcome to stay in this property.",
+    "Icon": "fa-solid fa-paw"
+  },
+  {
+    "NameEn": "Hot Tub",
+    "NameAr": "جاكوزي",
+    "Description": "Relaxing hot tub or jacuzzi available.",
+    "Icon": "fa-solid fa-hot-tub-person"
+  },
+  {
+    "NameEn": "Fire Extinguisher",
+    "NameAr": "طفاية حريق",
+    "Description": "Fire safety equipment easily accessible in the property.",
+    "Icon": "fa-solid fa-fire-extinguisher"
+  }
+]

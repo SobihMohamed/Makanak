@@ -1,0 +1,151 @@
+﻿using AutoMapper;
+using Makanak.Abstraction.IServices.NotificationService;
+using Makanak.Abstraction.IServices.ReviewService;
+using Makanak.Domain.Contracts.UOW;
+using Makanak.Domain.Exceptions;
+using Makanak.Domain.Exceptions.NotFound;
+using Makanak.Domain.Models.BookingEntities;
+using Makanak.Domain.Models.PropertyEntities;
+using Makanak.Domain.Models.ReviewEntities;
+using Makanak.Services.Services.NotificationImplement;
+using Makanak.Services.Specifications.BookingSpec;
+using Makanak.Services.Specifications.ReviewSpec;
+using Makanak.Shared.Common;
+using Makanak.Shared.Common.Params;
+using Makanak.Shared.Dto_s.Review;
+using Makanak.Shared.EnumsHelper.Booking;
+using Makanak.Shared.HelpersFactory;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Makanak.Services.Services.ReviewImplement
+{
+    public class ReviewService(IUnitOfWork unitOfWork, IMapper mapper ,INotificationService notificationService) : IReviewService
+    {
+        public async Task<ReviewDto> AddReviewAsync(CreateReviewDto createReviewDto, string tenantId)
+        {
+            
+            var bookingId = createReviewDto.BookingId;
+
+            // check booking 
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+            // specification
+            var spec = new BookingSpecifications(bookingId);
+
+            var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
+
+            if(booking == null) 
+                throw new BookingNotFound(bookingId);
+
+            // check the user
+            if(booking.TenantId != tenantId)
+                throw new BadRequestException("Can not add review by another account");
+
+            // check status completed ?
+            if(booking.Status != BookingStatus.Completed)
+                throw new BadRequestException("Can not add review while the status not completed");
+
+            var reviewSpec = new ReviewSpecifications(bookingId);
+
+            var reviewRepo = unitOfWork.GetRepo<Review, int>();
+
+            var reviewCount = await reviewRepo.CountAsync(reviewSpec);
+            if(reviewCount != 0)
+                throw new BadRequestException($"Can not Make 2 Review");
+
+            var review = mapper.Map<Review>(createReviewDto);
+            review.TenantId = tenantId;
+            review.PropertyId = booking.PropertyId;
+
+            reviewRepo.AddAsync(review);
+            var result = await unitOfWork.SaveChangesAsync();
+
+            if (result <= 0) throw new Exception("Failed to save review.");
+
+            // update property average rating
+            await UpdatePropertyAverageRatingAsync(booking.PropertyId);
+            
+            await notificationService.SendNotificationAsync(
+            NotificationFactory.ReviewReceived(
+                booking.OwnerId,       
+                booking.Tenant.Name,   
+                booking.Property.Title,
+                review.Id              
+            ));
+
+            return mapper.Map<ReviewDto>(review);
+
+        }
+        public async Task<Pagination<ReviewDto>> GetPropertyReviewsAsync(int propertyId, BaseQueryParams queryParams)
+        {
+            var reviewRepo = unitOfWork.GetRepo<Review, int>();
+
+            var reviewSpec = new ReviewSpecifications(propertyId, queryParams);
+            var propertyReviews = await reviewRepo.GetAllWithSpecificationAsync(reviewSpec);
+
+            // 2. Count Specification 
+            var countSpec = new ReviewWithCountSpecification(propertyId);
+            var totalItems = await reviewRepo.CountAsync(countSpec);
+
+            var data = mapper.Map<IReadOnlyList<ReviewDto>>(propertyReviews);
+
+            return new Pagination<ReviewDto>(queryParams.PageIndex, queryParams.PageSize, totalItems, data);
+        }
+        public async Task<bool> DeleteReviewAsync(int reviewId, string tenantId)
+        {
+            var reviewRepo = unitOfWork.GetRepo<Review, int>();
+
+            var review = await reviewRepo.GetByIdAsync(reviewId);
+
+            if (review == null) 
+                throw new ReviewNotFound(reviewId);
+
+            if (review.TenantId != tenantId)
+                throw new UnauthorizedAccessException("You are not allowed to delete this review.");
+
+            var propertyId = review.PropertyId;
+
+            reviewRepo.Delete(review);
+            var result = await unitOfWork.SaveChangesAsync();
+
+            if (result <= 0) 
+                throw new BadRequestException("Failed to delete review.");
+
+            await UpdatePropertyAverageRatingAsync(propertyId);
+
+            return true;
+        }
+        private async Task UpdatePropertyAverageRatingAsync(int propertyId)
+        {
+            // get repos 
+            var propertyRepo = unitOfWork.GetRepo<Property, int>();
+            var reviewRepo = unitOfWork.GetRepo<Review, int>();
+
+            // get all property review 
+            var spec = new ReviewSpecifications(propertyId, IsPropertyReviews: true);
+            var reviews = await reviewRepo.GetAllWithSpecificationAsync(spec);
+
+            var property = await propertyRepo.GetByIdAsync(propertyId);
+            if (property == null) 
+                throw new PropertyNotFound(propertyId);
+
+            if (reviews.Any())
+            {
+                var average = reviews.Average(r => r.Rating);
+
+                property.AverageRating = Math.Round(average, 1);
+
+            }
+            else
+            {
+                property.AverageRating = 0;
+            }
+                propertyRepo.Update(property);
+
+                await unitOfWork.SaveChangesAsync();
+
+        }
+    }
+}

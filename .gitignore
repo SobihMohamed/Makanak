@@ -361,5 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/Makanak.Web/Makanak.Web/wwwroot/uploads/Disputes
-/Makanak.Web/Makanak.Web/wwwroot/uploads/Properties/
+
+**/wwwroot/uploads/
