@@ -30,10 +30,10 @@ await app.SeedDatabaseAsync();
 // Configure the HTTP Request Pipeline
 
 // 1.Swagger Tester
-app.UseSwaggerDocumentation();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwaggerDocumentation();
     // when deploying to production, put the UseSwaggerDocumentation() inside
     // the if block and remove it from the top of the pipeline configuration
 }
