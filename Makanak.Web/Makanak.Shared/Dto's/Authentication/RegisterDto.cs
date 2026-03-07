@@ -11,8 +11,10 @@ namespace Makanak.Shared.Dto_s
     public class RegisterDto
     {
         [Required]
-        public string Name { get; set; } = null!; 
-        [EmailAddress,Required]
+        public string Name { get; set; } = null!;
+
+        [Required(ErrorMessage = "Email is required")]
+        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Invalid email format.")]
         public string Email { get; set; } = null!;
         [Required]
         public string Password { get; set; } = null!;
