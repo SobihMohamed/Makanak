@@ -32,40 +32,30 @@ namespace Makanak.Persistance.Seeds
             if (!admins.Any())
             {
                 var adminUsers = new List<ApplicationUser>
-                {
-                    new ApplicationUser
-                    { 
-                        UserStatus = UserStatus.Active,
-                        DateOfBirth = new DateTime(2004, 8, 5),
-                        UserType = UserTypes.Admin,
-                        Name = "Sobih Mohamed",
-                        UserName = "SOBIHMOHAMEDSOBIH@GMAIL.COM",
-                        Email = "sobihmohamedsobih@gmail.com",
-                        EmailConfirmed = true,
-                    },
-                    new ApplicationUser
-                    {
-                        UserStatus = UserStatus.Active,
-                        DateOfBirth = new DateTime(2004, 7, 17),
-                        UserType = UserTypes.Admin,
-                        Name = "Mohamed Nagy",
-                        UserName = "NAGYNADY1976@GMAIL.COM",
-                        Email = "nagynady1976@gamil.com",
-                        EmailConfirmed = true,
-                    },
-                    new ApplicationUser
-                    {
-                        UserStatus = UserStatus.Active,
-                        DateOfBirth = new DateTime(2004, 11, 28),
-                        UserType = UserTypes.Admin,
-                        Name = "Mohamed Abdelhaleem",
-                        UserName = "MOHAMEDHALEEM571@GMAIL.COM",
-                        Email = "mohamedhaleem571@gmail.com",
-                        EmailConfirmed = true,
-                    }
-                };
+        {
+            new ApplicationUser
+            {
+                UserStatus = UserStatus.Active,
+                DateOfBirth = new DateTime(2000, 1, 1),
+                UserType = UserTypes.Admin,
+                Name = "System Admin",
+                UserName = "ADMIN@MAKANAK.SITE",
+                Email = "admin@makanak.site",
+                EmailConfirmed = true,
+            },
+            new ApplicationUser
+            {
+                UserStatus = UserStatus.Active,
+                DateOfBirth = new DateTime(2000, 1, 1),
+                UserType = UserTypes.Admin,
+                Name = "Tester Account",
+                UserName = "TESTER@MAKANAK.SITE",
+                Email = "tester@makanak.site",
+                EmailConfirmed = true,
+            }
+        };
 
-                string defaultPassword = "Admin@12345";
+                string defaultPassword = "AdminPassword@123";
 
                 foreach (var admin in adminUsers)
                 {
