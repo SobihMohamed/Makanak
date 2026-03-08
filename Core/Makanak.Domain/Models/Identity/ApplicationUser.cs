@@ -21,9 +21,9 @@ namespace Makanak.Domain.Models.Identity
 
         #region Security Info
         // but user can't do any thing without verification by send national id images
-        public string? NationalId { get; set; } = null!;
-        public string? NationalIdImageFrontUrl { get; set; } = null!;
-        public string? NationalIdImageBackUrl { get; set; } = null!;
+        public string? NationalId { get; set; } 
+        public string? NationalIdImageFrontUrl { get; set; } 
+        public string? NationalIdImageBackUrl { get; set; } 
 
         #endregion
         public int StrikeCount { get; set; } = 0;

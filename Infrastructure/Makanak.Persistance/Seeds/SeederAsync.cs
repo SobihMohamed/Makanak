@@ -39,6 +39,7 @@ namespace Makanak.Persistance.Seeds
                 DateOfBirth = new DateTime(2000, 1, 1),
                 UserType = UserTypes.Admin,
                 Name = "System Admin",
+                PhoneNumber = "01225869788",
                 UserName = "ADMIN@MAKANAK.SITE",
                 Email = "admin@makanak.site",
                 EmailConfirmed = true,
@@ -47,6 +48,7 @@ namespace Makanak.Persistance.Seeds
             {
                 UserStatus = UserStatus.Active,
                 DateOfBirth = new DateTime(2000, 1, 1),
+                PhoneNumber = "01225869799",
                 UserType = UserTypes.Admin,
                 Name = "Tester Account",
                 UserName = "TESTER@MAKANAK.SITE",
