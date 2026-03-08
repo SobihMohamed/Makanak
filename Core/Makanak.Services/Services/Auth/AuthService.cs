@@ -150,7 +150,7 @@ namespace Makanak.Services.Services.Auth
             // verify current password
             var isPasswordValid = await userManager.CheckPasswordAsync(user, changeEmailDto.CurrentPassword);
 
-            if (!isPasswordValid) throw new UnauthorizedException();
+            if (!isPasswordValid) throw new BadRequestException("Incorrect current password");
 
             // check if new email is already used
             var isEmailExist = await userManager.FindByEmailAsync(changeEmailDto.NewEmail);
