@@ -33,6 +33,7 @@ await app.SeedDatabaseAsync();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
     app.UseSwaggerDocumentation();
     // when deploying to production, put the UseSwaggerDocumentation() inside
     // the if block and remove it from the top of the pipeline configuration

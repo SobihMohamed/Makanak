@@ -341,6 +341,38 @@ namespace Makanak.Services.Services.Auth
             return true;
         }
 
+        public async Task<AuthModelDto> ChangePasswordAsync(ChangePasswordDto changePasswordDto , string email)
+        {
+            //first get the user
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+                throw UserNotFoundException.ByEmail(email);
+            // then change the password
+            var result = await userManager
+                .ChangePasswordAsync(user, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                throw new BadRequestException("Password Change Failed", errors);
+            }
+
+            var newToken = await GenerateJwtToken(user);
+
+            var roles = await userManager.GetRolesAsync(user);
+
+            return new AuthModelDto
+            {
+                Message = "Password Changed Successfully",
+                Name = user.UserName!,
+                Email = user.Email!,
+                IsAuthenticated = true,
+                Token = newToken.Token,
+                ExpiresOn = newToken.ExpiresOn,
+                Roles = roles.ToList()
+            };
+
+        }
+
         #region Private Methods        
         private async Task<(string Token, DateTime ExpiresOn)> GenerateJwtToken(ApplicationUser user)
         {
@@ -445,6 +477,8 @@ namespace Makanak.Services.Services.Auth
             return existOtp;
 
         }
+
+        
         #endregion
     }
 }

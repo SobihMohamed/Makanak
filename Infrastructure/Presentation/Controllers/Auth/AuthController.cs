@@ -77,6 +77,14 @@ namespace Makanak.Presentation.Controllers.Auth
             var res = await serviceManager.AuthService.ResetPasswordAsync(resetPasswordDto);
             return Success(res, "Password has been reset successfully.");
         }
+
+        [HttpPost("change-password")] // POST: api/auth/change-password
+        public async Task<ActionResult<ApiResponse<AuthModelDto>>> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value; // get email from token
+            var res = await serviceManager.AuthService.ChangePasswordAsync(changePasswordDto, email!);
+            return Success(res,"Password changed successfully.");
+        }
         #endregion
 
         #region Verifying Identity
