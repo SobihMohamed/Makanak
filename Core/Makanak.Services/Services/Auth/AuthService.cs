@@ -37,7 +37,7 @@ namespace Makanak.Services.Services.Auth
             if (User == null)
             {
                 //Throw New UserNotFoundException 
-                throw UserNotFoundException.ByEmail(loginDto.Email);
+                throw new UnauthorizedException();
             }
             var isPasswordValid = await userManager.CheckPasswordAsync(User!, loginDto.Password);
             if (!isPasswordValid)
