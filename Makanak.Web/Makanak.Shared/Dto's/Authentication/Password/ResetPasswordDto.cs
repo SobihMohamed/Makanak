@@ -11,8 +11,10 @@ namespace Makanak.Shared.Dto_s.Authentication.Password
         public string Email { get; set; } = null!;
         [Required]
         public string Otp { get; set; } = null!;
-        [Required]
-        [MinLength(6, ErrorMessage = "Password must be at least 6 characters long")]
+
+        [Required(ErrorMessage = "Password is required")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
+        ErrorMessage = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
         public string NewPassword { get; set; } = null!;
         [Required]
         [Compare("NewPassword", ErrorMessage = "Passwords do not match")]
