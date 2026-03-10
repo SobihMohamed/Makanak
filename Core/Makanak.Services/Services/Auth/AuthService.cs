@@ -437,7 +437,7 @@ namespace Makanak.Services.Services.Auth
             {
                 Email = email,
                 OtpCode = newOtp,
-                ExpirationTime = DateTime.UtcNow.AddMinutes(5),
+                ExpirationTime = DateTime.UtcNow.AddMinutes(1),
                 IsUsed = false,
                 UserId = UserId,
                 LastModifiedBy = UserId,
@@ -455,24 +455,45 @@ namespace Makanak.Services.Services.Auth
 
             var userOtpRepo = unitOfWork.GetRepo<UserOtp, int>();
 
-            var specification = new UserOtpSpecifications(email, otp);
+            var specification = new UserOtpSpecifications(email);
 
             var existOtp = await userOtpRepo.GetByIdWithSpecificationsAsync(specification);
 
+            // check if not exist 
             if (existOtp == null)
             {
                 throw new BadRequestException("Invalid Otp");
             }
+
+            // check if expired
             if (existOtp.ExpirationTime < DateTime.UtcNow)
             {
+                existOtp.IsUsed = true;
+                userOtpRepo.Update(existOtp);
+                await unitOfWork.SaveChangesAsync();
                 throw new BadRequestException("Expired Otp");
             }
-            // 3. Burn the OTP
 
+            // check if invalid 
+            if (existOtp.OtpCode != otp)
+            {
+                existOtp.FailedAttempts += 1;
+                if (existOtp.FailedAttempts >= 3)
+                {
+                    existOtp.IsUsed = true;
+                    userOtpRepo.Update(existOtp);
+                    await unitOfWork.SaveChangesAsync();
+                    throw new BadRequestException("Maximum attempts reached. Please request a new OTP.");
+                }
+                userOtpRepo.Update(existOtp);
+                await unitOfWork.SaveChangesAsync();
+                throw new BadRequestException($"Invalid Otp. You have {3 - existOtp.FailedAttempts} attempts left.");
+            }
+
+            // if valid and burn it after verification
             existOtp.IsUsed = burnIt;
             userOtpRepo.Update(existOtp);
             await unitOfWork.SaveChangesAsync();
-
 
             return existOtp;
 
