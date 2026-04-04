@@ -160,8 +160,19 @@ namespace Makanak.Services.Services.Auth
             var otp = await GenerateAndSaveOtpAsync(user.Id, changeEmailDto.NewEmail);
 
             // send email to new email with token and otp
-            await emailService.SendEmailAsync(changeEmailDto.NewEmail, "Confirm New Email", $"Use this code to verify your new email: {otp}");
+            await emailService.SendEmailAsync(
+                changeEmailDto.NewEmail,
+                "Confirm New Email - Makanak",
+                $"Use this code to verify your new email: {otp}");
 
+            // 2. Send Security Alert to the OLD email (تنبيه أمني للإيميل القديم لحماية الحساب)
+            await emailService.SendEmailAsync(
+                currentEmail,
+                "Security Alert: Email Change Requested",
+                $"Hello,\nWe received a request to change the email associated with your Makanak account to " +
+                $"({changeEmailDto.NewEmail}).\n\nIf you made this request, you can safely ignore this email." +
+                $"\nIf you did NOT make this request, please contact our support team immediately to secure your account."
+            );
             return otp;
         }
 
