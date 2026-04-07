@@ -37,7 +37,7 @@ namespace Makanak.Services.Services.Auth
             if (User == null)
             {
                 //Throw New UserNotFoundException 
-                throw UserNotFoundException.ByEmail(loginDto.Email);
+                throw new UnauthorizedException();
             }
             var isPasswordValid = await userManager.CheckPasswordAsync(User!, loginDto.Password);
             if (!isPasswordValid)
@@ -150,7 +150,7 @@ namespace Makanak.Services.Services.Auth
             // verify current password
             var isPasswordValid = await userManager.CheckPasswordAsync(user, changeEmailDto.CurrentPassword);
 
-            if (!isPasswordValid) throw new UnauthorizedException();
+            if (!isPasswordValid) throw new BadRequestException("Incorrect current password");
 
             // check if new email is already used
             var isEmailExist = await userManager.FindByEmailAsync(changeEmailDto.NewEmail);
@@ -160,8 +160,19 @@ namespace Makanak.Services.Services.Auth
             var otp = await GenerateAndSaveOtpAsync(user.Id, changeEmailDto.NewEmail);
 
             // send email to new email with token and otp
-            await emailService.SendEmailAsync(changeEmailDto.NewEmail, "Confirm New Email", $"Use this code to verify your new email: {otp}");
+            await emailService.SendEmailAsync(
+                changeEmailDto.NewEmail,
+                "Confirm New Email - Makanak",
+                $"Use this code to verify your new email: {otp}");
 
+            // 2. Send Security Alert to the OLD email (تنبيه أمني للإيميل القديم لحماية الحساب)
+            await emailService.SendEmailAsync(
+                currentEmail,
+                "Security Alert: Email Change Requested",
+                $"Hello,\nWe received a request to change the email associated with your Makanak account to " +
+                $"({changeEmailDto.NewEmail}).\n\nIf you made this request, you can safely ignore this email." +
+                $"\nIf you did NOT make this request, please contact our support team immediately to secure your account."
+            );
             return otp;
         }
 
@@ -341,6 +352,38 @@ namespace Makanak.Services.Services.Auth
             return true;
         }
 
+        public async Task<AuthModelDto> ChangePasswordAsync(ChangePasswordDto changePasswordDto , string email)
+        {
+            //first get the user
+            var user = await userManager.FindByEmailAsync(email);
+            if (user == null)
+                throw UserNotFoundException.ByEmail(email);
+            // then change the password
+            var result = await userManager
+                .ChangePasswordAsync(user, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                throw new BadRequestException("Password Change Failed", errors);
+            }
+
+            var newToken = await GenerateJwtToken(user);
+
+            var roles = await userManager.GetRolesAsync(user);
+
+            return new AuthModelDto
+            {
+                Message = "Password Changed Successfully",
+                Name = user.UserName!,
+                Email = user.Email!,
+                IsAuthenticated = true,
+                Token = newToken.Token,
+                ExpiresOn = newToken.ExpiresOn,
+                Roles = roles.ToList()
+            };
+
+        }
+
         #region Private Methods        
         private async Task<(string Token, DateTime ExpiresOn)> GenerateJwtToken(ApplicationUser user)
         {
@@ -405,7 +448,7 @@ namespace Makanak.Services.Services.Auth
             {
                 Email = email,
                 OtpCode = newOtp,
-                ExpirationTime = DateTime.UtcNow.AddMinutes(5),
+                ExpirationTime = DateTime.UtcNow.AddMinutes(1),
                 IsUsed = false,
                 UserId = UserId,
                 LastModifiedBy = UserId,
@@ -423,28 +466,51 @@ namespace Makanak.Services.Services.Auth
 
             var userOtpRepo = unitOfWork.GetRepo<UserOtp, int>();
 
-            var specification = new UserOtpSpecifications(email, otp);
+            var specification = new UserOtpSpecifications(email);
 
             var existOtp = await userOtpRepo.GetByIdWithSpecificationsAsync(specification);
 
+            // check if not exist 
             if (existOtp == null)
             {
                 throw new BadRequestException("Invalid Otp");
             }
+
+            // check if expired
             if (existOtp.ExpirationTime < DateTime.UtcNow)
             {
+                existOtp.IsUsed = true;
+                userOtpRepo.Update(existOtp);
+                await unitOfWork.SaveChangesAsync();
                 throw new BadRequestException("Expired Otp");
             }
-            // 3. Burn the OTP
 
+            // check if invalid 
+            if (existOtp.OtpCode != otp)
+            {
+                existOtp.FailedAttempts += 1;
+                if (existOtp.FailedAttempts >= 3)
+                {
+                    existOtp.IsUsed = true;
+                    userOtpRepo.Update(existOtp);
+                    await unitOfWork.SaveChangesAsync();
+                    throw new BadRequestException("Maximum attempts reached. Please request a new OTP.");
+                }
+                userOtpRepo.Update(existOtp);
+                await unitOfWork.SaveChangesAsync();
+                throw new BadRequestException($"Invalid Otp. You have {3 - existOtp.FailedAttempts} attempts left.");
+            }
+
+            // if valid and burn it after verification
             existOtp.IsUsed = burnIt;
             userOtpRepo.Update(existOtp);
             await unitOfWork.SaveChangesAsync();
 
-
             return existOtp;
 
         }
+
+        
         #endregion
     }
 }

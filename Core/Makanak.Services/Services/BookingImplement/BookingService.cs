@@ -313,9 +313,10 @@ namespace Makanak.Services.Services.BookingImplement
         {
             // get booking repo 
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-
+            // get spec 
+            var spec = new BookingSpecifications(bookingId);
             //get booking 
-            var booking = await bookingRepo.GetByIdAsync(bookingId);
+            var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
 
             if (booking == null) throw new BookingNotFound(bookingId);
 
@@ -335,25 +336,50 @@ namespace Makanak.Services.Services.BookingImplement
             }
 
             // comission only paied online
-            var amountToPay = booking.CommissionPaid;
+            //var amountToPay = booking.CommissionPaid;
 
             // chcek on booking status 
             if (booking.Status != BookingStatus.PendingPayment)
                 throw new BadRequestException("You cannot pay for this booking until the owner approves it.");
 
-            // call payment service to send intent id old exist
-            var paymentDto = await paymentService.CreateOrUpdatePaymentIntent(booking.PaymentIntentId!, amountToPay);
-            
-            paymentDto.BookingId = booking.Id;       
-            paymentDto.Status = booking.Status.ToString(); 
-            
-            booking.PaymentIntentId = paymentDto.PaymentIntentId;
-            booking.ClientSecret = paymentDto.ClientSecret;
-
+            #region Payment for testing
+            booking.Status = BookingStatus.PaymentReceived;
+            booking.PaymentIntentId = "test_intent_" + Guid.NewGuid().ToString().Substring(0, 8);
+            booking.ClientSecret = "test_secret_for_mocking";
             bookingRepo.Update(booking);
             await unitOfWork.SaveChangesAsync();
+            if (booking.Property != null && booking.Tenant != null)
+            {
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.PaymentSuccess_ToTenant(booking.TenantId, booking.Property.Title, booking.Id)
+                );
 
-            return paymentDto;
+                await notificationService.SendNotificationAsync(
+                    NotificationFactory.PaymentSuccess_ToOwner(booking.OwnerId, booking.Tenant.Name, booking.Id)
+                );
+
+            }
+            return new BookingPaymentDto
+            {
+                PaymentIntentId = booking.PaymentIntentId,
+                ClientSecret = booking.ClientSecret,
+                BookingId = booking.Id,
+                Status = booking.Status.ToString() // هترجع هنا "PaymentReceived"
+            };
+            #endregion
+            // call payment service to send intent id old exist
+            //var paymentDto = await paymentService.CreateOrUpdatePaymentIntent(booking.PaymentIntentId!, amountToPay);
+
+            //paymentDto.BookingId = booking.Id;       
+            //paymentDto.Status = booking.Status.ToString(); 
+
+            //booking.PaymentIntentId = paymentDto.PaymentIntentId;
+            //booking.ClientSecret = paymentDto.ClientSecret;
+
+            //bookingRepo.Update(booking);
+            //await unitOfWork.SaveChangesAsync();
+
+            //return paymentDto;
         }
 
         public async Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus)

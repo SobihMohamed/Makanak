@@ -15,7 +15,9 @@ namespace Makanak.Persistance.Configurations
         {
             builder.ToTable("Users");
             builder.Property(u => u.NegativeBalance).HasColumnType("Decimal(18,2)");
-            builder.Property(u => u.PhoneNumber).HasColumnType("char(11)").IsRequired();
+            builder.Property(u => u.PhoneNumber)
+                   .HasMaxLength(15)
+                   .IsRequired();
             builder.Property(u => u.UserName).HasColumnType("varchar(256)").IsRequired();
             builder.Property(u => u.Email).HasColumnType("varchar(256)").IsRequired();
             builder.Property(u => u.DateOfBirth).HasColumnType("Date").IsRequired();

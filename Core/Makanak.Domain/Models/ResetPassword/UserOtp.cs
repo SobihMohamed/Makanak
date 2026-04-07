@@ -14,6 +14,7 @@ namespace Makanak.Domain.Models.ResetPassword
         public string OtpCode { get; set; } = string.Empty;
         public DateTime ExpirationTime { get; set; }
         public bool IsUsed { get; set; } = false;
+        public int FailedAttempts { get; set; } = 0;
 
         public string UserId { get; set; } = null!;
         public virtual ApplicationUser User { get; set; } = null!;

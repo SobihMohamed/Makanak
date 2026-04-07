@@ -32,5 +32,7 @@ namespace Makanak.Abstraction.IServices.Auth
 
         Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
 
+        Task<AuthModelDto> ChangePasswordAsync(ChangePasswordDto changePasswordDto, string email);
+
     }
 }

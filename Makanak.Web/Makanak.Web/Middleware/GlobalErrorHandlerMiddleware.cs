@@ -1,5 +1,6 @@
 ﻿using Makanak.Domain.Exceptions;
 using Makanak.Shared.Responses;
+using System;
 using System.Text.Json;
 
 namespace Makanak.Web.Middleware
@@ -39,9 +40,7 @@ namespace Makanak.Web.Middleware
 
             context.Response.ContentType = "application/json";
 
-            string serverErrorMessage = env.IsDevelopment()
-                ? $"{exception.Message} \n {exception.StackTrace}" 
-                : "An unexpected error occurred on the server. Please try again later."; 
+            string serverErrorMessage = env.IsDevelopment() ? exception.Message : "An unexpected error occurred on the server.";
 
             var resp = exception switch
             {
