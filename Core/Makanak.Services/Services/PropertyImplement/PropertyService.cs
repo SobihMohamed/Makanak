@@ -3,6 +3,8 @@ using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Domain.Contracts.UOW;
+using Makanak.Domain.EnumsHelper.User;
+using Makanak.Domain.Exceptions;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
@@ -22,6 +24,14 @@ namespace Makanak.Services.Services.PropertyImplement
     {
         public async Task<PropertyDetailDto> CreatePropertyAsync(CreatePropertyDto dto, string ownerId)
         {
+            // 0 - Check Owner status before doing anything
+            #region check user status
+            var owner = await userManager.FindByIdAsync(ownerId);
+
+            if (owner == null || owner.UserStatus != UserStatus.Active)
+                throw new BadRequestException("Owner account is not verified or active. You cannot create a property.");
+            #endregion
+
             // 1 - Map CreatePropertyDto to Property entity
             var property = _mapper.Map<Property>(dto);
 
@@ -343,7 +353,7 @@ namespace Makanak.Services.Services.PropertyImplement
             return new Pagination<PropertyDto>(propertyParams.PageIndex, propertyParams.PageSize, totalItems, data);
         }
 
-        public async Task<Pagination<PropertyDto>> GetPropertiesForAdminAsync(AdminPropertyParams adminParams)
+        public async Task<Pagination<AdminPropertyDto>> GetPropertiesForAdminAsync(AdminPropertyParams adminParams)
         {
             var propertyRepo = _unitOfWork.GetRepo<Property, int>();
 
@@ -351,14 +361,31 @@ namespace Makanak.Services.Services.PropertyImplement
             var totalItems = await propertyRepo.CountAsync(countSpecs);
 
             if (totalItems == 0)
-                return new Pagination<PropertyDto>(adminParams.PageIndex, adminParams.PageSize, 0, new List<PropertyDto>());
+                return new Pagination<AdminPropertyDto>(adminParams.PageIndex, adminParams.PageSize, 0, new List<AdminPropertyDto>());
 
             var dataSpecs = new AdminPropertySpecifications(adminParams, false);
             var properties = await propertyRepo.GetAllWithSpecificationAsync(dataSpecs);
 
-            var data = _mapper.Map<IReadOnlyList<PropertyDto>>(properties);
+            var data = _mapper.Map<IReadOnlyList<AdminPropertyDto>>(properties);
 
-            return new Pagination<PropertyDto>(adminParams.PageIndex, adminParams.PageSize, totalItems, data);
+            return new Pagination<AdminPropertyDto>(adminParams.PageIndex, adminParams.PageSize, totalItems, data);
+        }
+
+        public async Task<AdminPropertyDetailDto> GetPropertyByIdForAdminAsync(int id)
+        {
+            var propertyRepo = _unitOfWork.GetRepo<Property, int>();
+
+            var spec = new PropertySpecifications(id);
+
+            var property = await propertyRepo.GetByIdWithSpecificationsAsync(spec);
+
+            if (property == null)
+                throw new PropertyNotFound(id); 
+
+
+            var mappedProperty = _mapper.Map<AdminPropertyDetailDto>(property);
+
+            return mappedProperty;
         }
     }
 }
