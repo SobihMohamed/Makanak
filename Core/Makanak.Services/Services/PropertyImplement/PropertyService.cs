@@ -3,6 +3,8 @@ using Makanak.Abstraction.IServices;
 using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Domain.Contracts.UOW;
+using Makanak.Domain.EnumsHelper.User;
+using Makanak.Domain.Exceptions;
 using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
@@ -22,6 +24,14 @@ namespace Makanak.Services.Services.PropertyImplement
     {
         public async Task<PropertyDetailDto> CreatePropertyAsync(CreatePropertyDto dto, string ownerId)
         {
+            // 0 - Check Owner status before doing anything
+            #region check user status
+            var owner = await userManager.FindByIdAsync(ownerId);
+
+            if (owner == null || owner.UserStatus != UserStatus.Active)
+                throw new BadRequestException("Owner account is not verified or active. You cannot create a property.");
+            #endregion
+
             // 1 - Map CreatePropertyDto to Property entity
             var property = _mapper.Map<Property>(dto);
 
