@@ -1,4 +1,5 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
+using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Property_Params;
 using Makanak.Shared.Dto_s.Property;
@@ -80,11 +81,19 @@ namespace Makanak.Presentation.Controllers.Property_Controller
         #region Admin
         [Authorize(Roles = "Admin")]
         [HttpGet("admin-all")]
-        public async Task<ActionResult<ApiResponse<Pagination<PropertyDto>>>> GetAllPropertiesForAdmin([FromQuery] AdminPropertyParams adminPropertyParams)
+        public async Task<ActionResult<ApiResponse<Pagination<AdminPropertyDto>>>> GetAllPropertiesForAdmin([FromQuery] AdminPropertyParams adminPropertyParams)
         {
             var properties = await serviceManager.PropertyServices.GetPropertiesForAdminAsync(adminPropertyParams);
 
             return Success(properties);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/{id}")]
+        public async Task<ActionResult<ApiResponse<AdminPropertyDetailDto>>> GetPropertyByIdForAdmin(int id)
+        {
+            var property = await serviceManager.PropertyServices.GetPropertyByIdForAdminAsync(id);
+            return Success(property);
         }
         #endregion
     }

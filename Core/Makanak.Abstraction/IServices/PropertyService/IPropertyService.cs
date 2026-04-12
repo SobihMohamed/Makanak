@@ -21,6 +21,8 @@ namespace Makanak.Abstraction.IServices.PropertyService
 
         Task<Pagination<PropertyDto>> GetAllAvailablePropertiesAsync(PropertyParams propertyParams);
 
-        Task<Pagination<PropertyDto>> GetPropertiesForAdminAsync(AdminPropertyParams adminPropertyParams);
+        Task<Pagination<AdminPropertyDto>> GetPropertiesForAdminAsync(AdminPropertyParams adminPropertyParams);
+
+        Task<AdminPropertyDetailDto> GetPropertyByIdForAdminAsync(int id);
     }
 }
