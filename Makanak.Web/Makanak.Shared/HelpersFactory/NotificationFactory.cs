@@ -8,19 +8,22 @@ namespace Makanak.Shared.HelpersFactory
 {
     public static class NotificationFactory
     {
+        // --------------------------------------------------------
+        // 1. مرحلة الطلب والموافقة (Booking Requests)
+        // --------------------------------------------------------
+
         public static CreateNotificationDto BookingRequest(string ownerId, string tenantName, string propertyName, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = ownerId,
                 Title = "طلب حجز جديد 🏠",
-                Message = $"المستخدم {tenantName} طلب حجز عقارك '{propertyName}'. يرجى اتخاذ إجراء.",
+                Message = $"المستخدم '{tenantName}' أرسل طلباً لحجز عقارك '{propertyName}'. يرجى مراجعة الطلب.",
                 ReferenceId = bookingId.ToString(),
                 NotificationType = NotificationType.BookingRequest
             };
         }
 
-        // لما المالك يوافق (PendingPayment) -> ابعت للمستأجر يدفع
         public static CreateNotificationDto BookingApprovedForPayment(string tenantId, string propertyName, int bookingId)
         {
             return new CreateNotificationDto
@@ -33,7 +36,6 @@ namespace Makanak.Shared.HelpersFactory
             };
         }
 
-        // لما المالك يرفض (RejectedByOwner) -> ابعت للمستأجر
         public static CreateNotificationDto BookingRejected(string tenantId, string propertyName, int bookingId)
         {
             return new CreateNotificationDto
@@ -42,49 +44,47 @@ namespace Makanak.Shared.HelpersFactory
                 Title = "عذراً، تم رفض الطلب ❌",
                 Message = $"للأسف، مالك العقار '{propertyName}' غير متاح حالياً لاستقبال هذا الحجز.",
                 ReferenceId = bookingId.ToString(),
-                NotificationType = NotificationType.BookingRejected // ضيفها في الـ Enum
+                NotificationType = NotificationType.BookingRejected
             };
         }
 
-
+        // --------------------------------------------------------
         // 2. مرحلة الدفع (Payment Flow)
+        // --------------------------------------------------------
 
-        // (PaymentReceived) -> للمستأجر (إظهار التفاصيل)
         public static CreateNotificationDto PaymentSuccess_ToTenant(string tenantId, string propertyName, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = tenantId,
                 Title = "تم تأكيد الحجز بنجاح! 🎉",
-                Message = $"تم الدفع بنجاح لـ '{propertyName}'. الآن يمكنك رؤية العنوان ورقم المالك.",
+                Message = $"تم الدفع بنجاح لعقار '{propertyName}'. يمكنك الآن رؤية العنوان بالكامل ورقم تواصل المالك.",
                 ReferenceId = bookingId.ToString(),
-                NotificationType = NotificationType.BookingConfirmed // ضيفها
+                NotificationType = NotificationType.BookingConfirmed
             };
         }
 
-        // (PaymentReceived) -> للمالك (فلوسك جاية)
         public static CreateNotificationDto PaymentSuccess_ToOwner(string ownerId, string tenantName, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = ownerId,
                 Title = "حجز مؤكد جديد 💰",
-                Message = $"قام {tenantName} بدفع العربون وتأكيد الحجز. تواصل معه للترتيب.",
+                Message = $"قام '{tenantName}' بدفع العربون وتأكيد الحجز. يرجى التواصل معه للترتيب.",
                 ReferenceId = bookingId.ToString(),
                 NotificationType = NotificationType.BookingConfirmed
             };
         }
 
-        // (PaymentFailed) -> للمستأجر
         public static CreateNotificationDto PaymentFailed(string tenantId, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = tenantId,
                 Title = "فشل في عملية الدفع ⚠️",
-                Message = "لم نتمكن من إتمام الدفع. يرجى المحاولة مرة أخرى قبل انتهاء المهلة.",
+                Message = "لم نتمكن من إتمام الدفع الخاص بحجزك الأخير. يرجى المحاولة مرة أخرى قبل انتهاء المهلة.",
                 ReferenceId = bookingId.ToString(),
-                NotificationType = NotificationType.PaymentFailed // ضيفها
+                NotificationType = NotificationType.PaymentFailed
             };
         }
 
@@ -92,34 +92,32 @@ namespace Makanak.Shared.HelpersFactory
         // 3. الإلغاء وانتهاء الوقت (Cancellation)
         // --------------------------------------------------------
 
-        // لما حد يلغي للتاني
         public static CreateNotificationDto BookingCancelled(string targetUserId, string cancelledByWho, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = targetUserId,
                 Title = "تم إلغاء الحجز 🚫",
-                Message = $"قام {cancelledByWho} بإلغاء الحجز رقم {bookingId}.",
+                Message = $"قام '{cancelledByWho}' بإلغاء هذا الحجز. تم تحديث حالة الطلب.",
                 ReferenceId = bookingId.ToString(),
                 NotificationType = NotificationType.BookingCancelled
             };
         }
 
-        // لما الوقت يخلص (Auto Cancel)
         public static CreateNotificationDto BookingExpired(string tenantId, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = tenantId,
                 Title = "انتهت مهلة الدفع ⏳",
-                Message = $"تم إلغاء الحجز رقم {bookingId} تلقائياً لعدم السداد في الوقت المحدد.",
+                Message = "تم إلغاء طلب الحجز الخاص بك تلقائياً نظراً لعدم إتمام عملية السداد في الوقت المحدد.",
                 ReferenceId = bookingId.ToString(),
                 NotificationType = NotificationType.BookingCancelled
             };
         }
 
         // --------------------------------------------------------
-        // 4. التشيك إن والانتهاء (Check-In / Completed)
+        // 4. التشيك إن والانتهاء والتقييم (Check-In & Reviews)
         // --------------------------------------------------------
 
         public static CreateNotificationDto BookingCompleted(string tenantId, int bookingId)
@@ -128,69 +126,69 @@ namespace Makanak.Shared.HelpersFactory
             {
                 UserId = tenantId,
                 Title = "كيف كانت إقامتك؟ ⭐",
-                Message = "نرجو أن تكون استمتعت بإقامتك. لا تنسَ تقييم العقار!",
+                Message = "نرجو أن تكون قد استمتعت بإقامتك. لا تنسَ تقييم العقار لمساعدة الآخرين!",
                 ReferenceId = bookingId.ToString(),
                 NotificationType = NotificationType.BookingCompleted
             };
         }
 
-        // 5. التقييمات (Reviews)
         public static CreateNotificationDto ReviewReceived(string ownerId, string tenantName, string propertyName, int reviewId)
         {
             return new CreateNotificationDto
             {
                 UserId = ownerId,
                 Title = "تقييم جديد للعقار ⭐",
-                Message = $"قام {tenantName} بإضافة تقييم جديد لعقارك '{propertyName}'.",
-                ReferenceId = reviewId.ToString(), // عشان يفتح التقييم يشوفه
-                NotificationType = NotificationType.ReviewReceived // ضيفها في الـ Enum
+                Message = $"قام '{tenantName}' بإضافة تقييم جديد لعقارك '{propertyName}'.",
+                ReferenceId = reviewId.ToString(),
+                NotificationType = NotificationType.ReviewReceived
             };
         }
 
-        // 6. Admin for new Property
+        // --------------------------------------------------------
+        // 5. إشعارات الأدمن والمراجعات (Admin & Approvals)
+        // --------------------------------------------------------
+
         public static CreateNotificationDto NewPropertyRequest(string adminId, string ownerName, string propertyTitle, int propertyId)
         {
             return new CreateNotificationDto
             {
-                UserId = adminId, // رايح للأدمن
+                UserId = adminId,
                 Title = "طلب إضافة عقار جديد 🏠",
-                Message = $"المالك {ownerName} أضاف عقار '{propertyTitle}' وينتظر الموافقة.",
-                ReferenceId = propertyId.ToString(), // عشان الأدمن يدوس يفتح صفحة العقار
+                Message = $"المالك '{ownerName}' أضاف عقاراً جديداً بعنوان '{propertyTitle}' وينتظر المراجعة والموافقة.",
+                ReferenceId = propertyId.ToString(),
                 NotificationType = NotificationType.NewPropertyListing
             };
         }
 
-        // Admin For Identity
         public static CreateNotificationDto DocumentVerificationRequest(string adminId, string userName, string requesterId)
         {
             return new CreateNotificationDto
             {
-                UserId = adminId, // رايح للأدمن
+                UserId = adminId,
                 Title = "طلب توثيق حساب 🆔",
-                Message = $"المستخدم {userName} قام برفع مستندات الهوية وينتظر المراجعة.",
-                ReferenceId = requesterId, // عشان الأدمن يفتح بروفايل اليوزر
+                Message = $"المستخدم '{userName}' قام برفع مستندات الهوية وينتظر المراجعة لتوثيق الحساب.",
+                ReferenceId = requesterId,
                 NotificationType = NotificationType.DocumentVerificationRequest
             };
         }
 
         public static CreateNotificationDto PropertyStatusUpdate(string ownerId, string propertyTitle, PropertyStatus status, string? reason = null)
         {
-            // تحديد العنوان والرسالة بناءً على الحالة
             string title = status switch
             {
                 PropertyStatus.Accepted => "تمت الموافقة على عقارك ✅",
                 PropertyStatus.Rejected => "تم رفض العقار ❌",
                 PropertyStatus.Banned => "تم حظر العقار ⛔",
-                PropertyStatus.Pending => "تم تعليق العقار للمراجعة ⏳",
+                PropertyStatus.Pending => "عقارك قيد المراجعة ⏳",
                 _ => "تحديث في حالة العقار 🔔"
             };
 
             string message = status switch
             {
-                PropertyStatus.Accepted => $"عقارك '{propertyTitle}' متاح الآن للحجز.",
-                PropertyStatus.Rejected => $"تم رفض عقارك '{propertyTitle}'. السبب: {reason ?? "غير محدد"}",
-                PropertyStatus.Banned => $"تم حظر عقارك '{propertyTitle}' لمخالفة الشروط. السبب: {reason}",
-                PropertyStatus.Pending => $"تم إعادة عقارك '{propertyTitle}' لحالة المراجعة.",
+                PropertyStatus.Accepted => $"عقارك '{propertyTitle}' متاح الآن للحجز والظهور للمستخدمين.",
+                PropertyStatus.Rejected => $"تم رفض نشر عقارك '{propertyTitle}'. السبب: {reason ?? "غير محدد"}",
+                PropertyStatus.Banned => $"تم إخفاء وحظر عقارك '{propertyTitle}' لمخالفة الشروط. السبب: {reason}",
+                PropertyStatus.Pending => $"تمت إعادة عقارك '{propertyTitle}' لحالة المراجعة من قبل الإدارة.",
                 _ => $"تم تغيير حالة عقارك '{propertyTitle}' إلى {status}."
             };
 
@@ -204,12 +202,11 @@ namespace Makanak.Shared.HelpersFactory
             };
         }
 
-        // دالة عامة لتحديث حالة المستخدم
         public static CreateNotificationDto UserStatusUpdate(string userId, UserStatus status, string? reason = null)
         {
             string title = status switch
             {
-                UserStatus.Active => "تم توثيق/تفعيل حسابك ✅",
+                UserStatus.Active => "تم توثيق حسابك ✅",
                 UserStatus.Rejected => "فشل توثيق الحساب ❌",
                 UserStatus.Banned => "تم حظر حسابك ⛔",
                 UserStatus.Pending => "حسابك قيد المراجعة ⏳",
@@ -218,10 +215,10 @@ namespace Makanak.Shared.HelpersFactory
 
             string message = status switch
             {
-                UserStatus.Active => "حسابك نشط الآن ويمكنك استخدام كافة المميزات.",
-                UserStatus.Rejected => $"تم رفض المستندات المقدمة. السبب: {reason}",
-                UserStatus.Banned => $"تم حظر حسابك لمخالفة القوانين. السبب: {reason}",
-                UserStatus.Pending => "جاري مراجعة بيانات حسابك من قبل الإدارة.",
+                UserStatus.Active => "حسابك نشط وموثق الآن، يمكنك استخدام كافة مميزات المنصة بحرية.",
+                UserStatus.Rejected => $"تم رفض مستندات التوثيق المقدمة. السبب: {reason}",
+                UserStatus.Banned => $"تم حظر حسابك لمخالفة قوانين المنصة. السبب: {reason}",
+                UserStatus.Pending => "جاري مراجعة بيانات هويتك من قبل الإدارة لتأكيد التوثيق.",
                 _ => $"حالة حسابك الآن هي: {status}."
             };
 
@@ -234,13 +231,17 @@ namespace Makanak.Shared.HelpersFactory
                 NotificationType = NotificationType.UserStatusChanged
             };
         }
-       
+
+        // --------------------------------------------------------
+        // 6. نظام الإنذارات (Strikes)
+        // --------------------------------------------------------
+
         public static CreateNotificationDto StrikeAdded(string userId, int currentStrikes, bool isBanned)
         {
-            string title = isBanned ? "Account Suspended 🚫" : "Warning: Strike Received ⚠️";
+            string title = isBanned ? "تم إيقاف الحساب 🚫" : "تحذير: تلقيت إنذاراً إدارياً ⚠️";
             string message = isBanned
-                ? "Your account has been suspended due to receiving 3 strikes."
-                : $"You have received a strike from the administration. You currently have {currentStrikes}/3 strikes.";
+                ? "تم إيقاف حسابك مؤقتاً نظراً لتلقيك 3 إنذارات متتالية لمخالفة سياسات المنصة."
+                : $"لقد تلقيت إنذاراً من الإدارة. رصيدك الحالي هو {currentStrikes} من أصل 3 إنذارات مسموح بها.";
 
             return new CreateNotificationDto
             {
@@ -254,10 +255,10 @@ namespace Makanak.Shared.HelpersFactory
 
         public static CreateNotificationDto StrikeRemoved(string userId, int currentStrikes, bool isUnbanned)
         {
-            string title = isUnbanned ? "Account Reactivated ✅" : "Strike Removed ✨";
+            string title = isUnbanned ? "تم إعادة تفعيل حسابك ✅" : "تمت إزالة إنذار ✨";
             string message = isUnbanned
-                ? "A strike was removed and your account has been reactivated!"
-                : $"A strike was removed from your account. You currently have {currentStrikes}/3 strikes.";
+                ? "تمت إزالة أحد الإنذارات وإعادة تفعيل حسابك بنجاح. أهلاً بك مجدداً!"
+                : $"تمت إزالة إنذار من سجل حسابك. رصيدك الحالي هو {currentStrikes} من أصل 3 إنذارات.";
 
             return new CreateNotificationDto
             {
@@ -268,14 +269,18 @@ namespace Makanak.Shared.HelpersFactory
                 NotificationType = NotificationType.StrikeRemoved
             };
         }
-        
+
+        // --------------------------------------------------------
+        // 7. نظام النزاعات والمشاكل (Disputes)
+        // --------------------------------------------------------
+
         public static CreateNotificationDto NewDisputeCreated(string adminId, string complainantName, int bookingId, int disputeId)
         {
             return new CreateNotificationDto
             {
                 UserId = adminId,
-                Title = "New Dispute Opened ⚠️",
-                Message = $"User '{complainantName}' has raised a dispute regarding Booking #{bookingId}. Action required.",
+                Title = "تم فتح نزاع جديد ⚠️",
+                Message = $"قام المستخدم '{complainantName}' بفتح نزاع بخصوص حجز سابق. يرجى التدخل والمراجعة.",
                 ReferenceId = disputeId.ToString(),
                 NotificationType = NotificationType.DisputeOpened
             };
@@ -283,16 +288,15 @@ namespace Makanak.Shared.HelpersFactory
 
         public static CreateNotificationDto DisputeConcluded(string userId, int bookingId, int disputeId, DisputeStatus decision, string adminComment)
         {
-            string statusText = decision == DisputeStatus.Resolved ? "Resolved" : "Rejected";
-
+            string statusText = decision == DisputeStatus.Resolved ? "تم حله" : "مرفوض";
             string icon = decision == DisputeStatus.Resolved ? "✅" : "❌";
 
             return new CreateNotificationDto
             {
                 UserId = userId,
-                Title = $"Dispute Update: {statusText} {icon}",
-                Message = $"The dispute regarding Booking #{bookingId} has been closed as '{statusText}'.\nAdmin Comment: {adminComment}",
-                ReferenceId = disputeId.ToString(), 
+                Title = $"تحديث بخصوص النزاع: {statusText} {icon}",
+                Message = $"تم إنهاء النزاع الخاص بك واتخاذ القرار بأنه '{statusText}'.\nرد الإدارة: {adminComment}",
+                ReferenceId = disputeId.ToString(),
                 NotificationType = NotificationType.DisputeResolved
             };
         }
@@ -301,36 +305,39 @@ namespace Makanak.Shared.HelpersFactory
         {
             return new CreateNotificationDto
             {
-                UserId = adminId, // رايح للأدمن
-                Title = "Dispute Cancelled 🗑️",
-                Message = $"User '{complainantName}' has cancelled the dispute regarding Booking #{bookingId}. No further action is required.",
+                UserId = adminId,
+                Title = "تم إلغاء النزاع 🗑️",
+                Message = $"قام المستخدم '{complainantName}' بإلغاء النزاع الذي فتحه مؤخراً. لا توجد أي إجراءات إضافية مطلوبة.",
                 ReferenceId = disputeId.ToString(),
                 NotificationType = NotificationType.DisputeCancelled
             };
         }
-        // ---7 . Background Services 
+
+        // --------------------------------------------------------
+        // 8. خدمات التنبيهات التلقائية (Background Services)
+        // --------------------------------------------------------
+
         public static CreateNotificationDto PaymentDeadlineWarning(string tenantId, int bookingId, int minutesLeft)
         {
             return new CreateNotificationDto
             {
                 UserId = tenantId,
                 Title = "تنبيه هام: مهلة الدفع قاربت على الانتهاء ⏳",
-                Message = $"متبقي أقل من {minutesLeft} دقيقة لإلغاء حجزك تلقائياً. يرجى الدفع الآن.",
+                Message = $"متبقي أقل من {minutesLeft} دقيقة لإلغاء طلب حجزك تلقائياً. يرجى إتمام الدفع الآن لضمان الحجز.",
                 ReferenceId = bookingId.ToString(),
-                NotificationType = NotificationType.PaymentWarning 
+                NotificationType = NotificationType.PaymentWarning
             };
         }
 
-        // 2. تذكير بموعد الوصول (قبلها بيوم)
         public static CreateNotificationDto CheckInReminder(string tenantId, string propertyTitle, int bookingId)
         {
             return new CreateNotificationDto
             {
                 UserId = tenantId,
                 Title = "رحلتك تبدأ غداً! 🧳",
-                Message = $"نتمنى لك إقامة سعيدة في '{propertyTitle}'. تأكد من مراجعة تفاصيل الوصول.",
+                Message = $"نتمنى لك إقامة سعيدة ومريحة في '{propertyTitle}'. تأكد من مراجعة تفاصيل العنوان والوصول.",
                 ReferenceId = bookingId.ToString(),
-                NotificationType = NotificationType.CheckInReminder 
+                NotificationType = NotificationType.CheckInReminder
             };
         }
     }

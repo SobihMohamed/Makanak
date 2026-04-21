@@ -545,10 +545,27 @@ namespace Makanak.Services.Services.BookingImplement
             var spec = new BookingSpecifications(bookingId);
             var booking = await unitOfWork.GetRepo<Booking, int>().GetByIdWithSpecificationsAsync(spec);
 
-            if (booking == null) throw new BookingNotFound(booking!.Id);
+            // 1. تصليح الـ Null
+            if (booking == null) throw new BookingNotFound(bookingId);
+
             if (booking.Property.OwnerId != ownerId) throw new UnauthorizedAccessException("Not your property");
 
-            return mapper.Map<OwnerBookingDetailsDto>(booking);
+            // 2. المابينج مرة واحدة بس
+            var dto = mapper.Map<OwnerBookingDetailsDto>(booking);
+
+            // 3. تصليح شرط الإخفاء (&& بدل ||) + يفضل نضيف حالة "مؤكد" عشان يقدروا يتواصلوا
+            if (booking.Status != BookingStatus.Completed &&
+                booking.Status != BookingStatus.CheckedIn &&
+                booking.Status != BookingStatus.PaymentReceived) // (Confirmed = بعد الدفع)
+            {
+                dto.TenantName = null;
+                dto.TenantPhoneNumber = null;
+                dto.TenantImage = null;
+                dto.TenantIdentityImage = null;
+            }
+
+            // 4. نرجع الـ dto اللي عدلنا عليه
+            return dto;
         }
     }
 }
