@@ -27,7 +27,14 @@ namespace Makanak.Persistance.Evaluator
             {
                 Query = Specifications.Includes.Aggregate(Query, (CurrentQuery, Expression) => CurrentQuery.Include(Expression));
             }
-
+            //  Nested Includes
+            if (Specifications.IncludeStrings is not null && Specifications.IncludeStrings.Any())
+            {
+                foreach (var includeString in Specifications.IncludeStrings)
+                {
+                    Query = Query.Include(includeString); // include nested properties like "PharmaOwner.ApplicationUser"
+                }
+            }
             if (Specifications.OrderExpressions != null && Specifications.OrderExpressions.Count > 0)
             {
                 // 1. التعامل مع أول ترتيب (Primary Sort)
