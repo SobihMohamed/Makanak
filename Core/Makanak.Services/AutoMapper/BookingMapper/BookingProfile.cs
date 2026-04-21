@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Makanak.Domain.Models.BookingEntities;
+using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.EnumsHelper.Booking;
 
@@ -16,7 +17,7 @@ namespace Makanak.Services.AutoMapper.BookingMapper
             .ForMember(d => d.TenantName, o => o.MapFrom(s => s.Tenant.Name))
             .ForMember(d => d.TenantImage, o => o.MapFrom(s => s.Tenant.ProfilePictureUrl))
             .ForMember(d => d.CommissionPaid, o => o.MapFrom(s => s.CommissionPaid))
-            .ForMember(d => d.PropertyMainImage, o => o.MapFrom(s => s.Property.MainImageUrl));
+            .ForMember(d => d.PropertyMainImage, o => o.MapFrom<UrlResolver<Booking, BookingDto>, string>(s => s.Property.MainImageUrl));
 
             CreateMap<Booking, ScanQrResponseDto>()
              .ForMember(d => d.BookingId, o => o.MapFrom(s => s.Id))
@@ -43,6 +44,8 @@ namespace Makanak.Services.AutoMapper.BookingMapper
                 .ForMember(dest => dest.CheckInInstructions, opt => opt.MapFrom(src =>
                     IsPaid(src.Status) ? "يرجى التواصل مع المالك قبل الوصول بساعة وإظهار الـ QR Code" : "سيتم إظهار التعليمات بعد إتمام الدفع"))
 
+                .ForMember(d => d.PropertyMainImage, o => o.MapFrom<UrlResolver<Booking, TenantBookingDetailsDto>, string>(s => s.Property.MainImageUrl))
+                
                 .ForMember(dest => dest.CheckInQrCode, opt => opt.MapFrom(src =>
                     IsPaid(src.Status) ? src.CheckInQrCode : null));
 
