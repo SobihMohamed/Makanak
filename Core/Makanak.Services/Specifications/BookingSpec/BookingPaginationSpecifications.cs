@@ -26,6 +26,8 @@ namespace Makanak.Services.Specifications.BookingSpec
             {
                 AddInclude(x => x.Property);
                 AddInclude(x => x.Tenant);
+                var propertyImnagesVar = $"{nameof(Booking.Property)}.{nameof(Booking.Property.PropertyImages)}";
+                AddInclude(propertyImnagesVar);
 
                 if (bookingParams.Sort.HasValue)
                 {

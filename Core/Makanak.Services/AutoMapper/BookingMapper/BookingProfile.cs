@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Makanak.Domain.Models.BookingEntities;
+using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Services.AutoMapper.Resolver;
 using Makanak.Shared.Dto_s.Booking;
+using Makanak.Shared.Dto_s.Property;
 using Makanak.Shared.EnumsHelper.Booking;
 
 
@@ -27,6 +29,10 @@ namespace Makanak.Services.AutoMapper.BookingMapper
              .ForMember(d => d.PropertyName, o => o.MapFrom(s => s.Property.Title)) //
              .ForMember(d => d.Message, o => o.MapFrom(s => "Welcome! Please verify the tenant's identity before delivery."));
 
+
+            CreateMap<PropertyImage, PropertyImageDto>()
+                .ForMember(d => d.ImageUrl, o => o.MapFrom<UrlResolver<PropertyImage, PropertyImageDto>, string>(s => s.ImageUrl));
+           
             // 3. Mapping (TenantBookingDetailsDto)
             // =================================================================
             CreateMap<Booking, TenantBookingDetailsDto>()
@@ -45,6 +51,8 @@ namespace Makanak.Services.AutoMapper.BookingMapper
                     IsPaid(src.Status) ? "يرجى التواصل مع المالك قبل الوصول بساعة وإظهار الـ QR Code" : "سيتم إظهار التعليمات بعد إتمام الدفع"))
 
                 .ForMember(d => d.PropertyMainImage, o => o.MapFrom<UrlResolver<Booking, TenantBookingDetailsDto>, string>(s => s.Property.MainImageUrl))
+                
+                .ForMember(d => d.PropertyImages, o => o.MapFrom(s => s.Property.PropertyImages))
                 
                 .ForMember(dest => dest.CheckInQrCode, opt => opt.MapFrom(src =>
                     IsPaid(src.Status) ? src.CheckInQrCode : null));

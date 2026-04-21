@@ -11,6 +11,8 @@ namespace Makanak.Domain.Contracts.Specifications
     {
         Expression<Func<TEntity, bool>> Criteria { get; } // RETURN T OR F 
         List<Expression<Func<TEntity, object>>> Includes { get; }
+        // Include strings for navigation properties
+        List<string> IncludeStrings { get; }
 
         // OrderBy
         List<OrderExpressionInfo<TEntity>> OrderExpressions { get; }

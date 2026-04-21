@@ -27,7 +27,9 @@ namespace Makanak.Services.Specifications
             Includes.Add(includeExpression);
         }
         #endregion
-
+        public List<string> IncludeStrings { get; private set; } = new List<string>();
+        protected void AddInclude(string includeString)
+            => IncludeStrings.Add(includeString);
         #region OrderBy
         public Expression<Func<TEntity, object>> OrderBy { get; private set; }
         public Expression<Func<TEntity, object>> OrderByDesc { get; private set; }
