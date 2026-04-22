@@ -22,7 +22,10 @@ namespace Makanak.Shared.Dto_s.Booking
         public int TotalDays { get; set; }
         public string Status { get; set; }
 
-        public decimal TotalPrice { get; set; } // السعر الإجمالي اللي هيدفعه
+        public decimal PricePerNight { get; set; } // سعر الليلة الواحدة
+        public decimal BasePrice { get; set; }     // السعر الأساسي للمالك (عدد الليالي * سعر الليلة)
+        public decimal PlatformFee { get; set; }   // رسوم المنصة (الـ 10%)
+        public decimal TotalPrice { get; set; }
         public string? SpecialRequests { get; set; }
     }
 }

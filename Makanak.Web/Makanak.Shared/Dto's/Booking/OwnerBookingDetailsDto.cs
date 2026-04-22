@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Makanak.Shared.Dto_s.Property;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -9,6 +10,9 @@ namespace Makanak.Shared.Dto_s.Booking
         public int Id { get; set; }
         public int PropertyId { get; set; }
         public string PropertyName { get; set; }
+
+        public string? PropertyMainImage { get; set; }
+        public List<PropertyImageDto> PropertyImages { get; set; } = new();
 
         // بيانات المستأجر مهمة جداً للمالك
         public string TenantName { get; set; }

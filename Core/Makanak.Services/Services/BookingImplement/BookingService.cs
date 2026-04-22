@@ -75,15 +75,19 @@ namespace Makanak.Services.Services.BookingImplement
                 throw new BadRequestException("Property is not available for the selected dates.");
             #endregion
 
-            // financial calculations
+            // --- Financial calculations ---
+
             var totalDays = (dto.CheckOutDate.Date - dto.CheckInDate.Date).Days;
-            var totalAmount = totalDays * property.PricePerNight;
+            var baseAmount = totalDays * property.PricePerNight; // مثلا: 5000
 
-            var commissionPercentage = 0.10m; 
-            var commissionAmount = totalAmount * commissionPercentage;
-            var amountToOwner = totalAmount - commissionAmount;
+            var commissionPercentage = 0.10m;
+            var commissionAmount = baseAmount * commissionPercentage; // مثلا: 500
 
-            // create booking entity
+            var amountToOwner = baseAmount; // 5000
+
+            var totalAmountToPayByTenant = baseAmount + commissionAmount; 
+
+            // --- create booking entity ---
             var booking = mapper.Map<Booking>(dto);
 
             booking.TenantId = tenantId;
@@ -91,15 +95,15 @@ namespace Makanak.Services.Services.BookingImplement
             booking.Property = property;
 
             booking.TotalDays = totalDays;
-            booking.TotalPrice = totalAmount;
             booking.PricePerNight = property.PricePerNight;
-            booking.CommissionPaid = commissionAmount;
-            booking.AmountToPayToOwner = amountToOwner;
+
+            booking.TotalPrice = totalAmountToPayByTenant; // 5500
+            booking.CommissionPaid = commissionAmount; // 500
+            booking.AmountToPayToOwner = amountToOwner; // 5000
 
             booking.Status = BookingStatus.PendingOwnerApproval;
             booking.CheckInQrCode = Guid.NewGuid().ToString();
             booking.IsQrScanned = false;
-
             // save to database
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
             bookingRepo.AddAsync(booking);
