@@ -14,6 +14,8 @@ using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Abstraction.IServices.RealTimeNotifier;
 using Makanak.Abstraction.IServices.ReviewService;
+using Makanak.Abstraction.IServices.User;
+using Makanak.Abstraction.IServicesContract.Token;
 using Makanak.Domain.Contracts.UOW;
 using Makanak.Domain.Models.Identity;
 using Makanak.Services.Services.Admin;
@@ -27,6 +29,8 @@ using Makanak.Services.Services.NotificationImplement;
 using Makanak.Services.Services.PaymentImplement;
 using Makanak.Services.Services.PropertyImplement;
 using Makanak.Services.Services.ReviewImplement;
+using Makanak.Services.Services.Token;
+using Makanak.Services.Services.UserImplement;
 using Makanak.Shared.Common.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -40,6 +44,10 @@ namespace Makanak.Services.Services.ManagerImplement
         private readonly Lazy<IEmailService> _emailService;
         private readonly Lazy<IAttachementServices> _attachementServices;
         private readonly Lazy<IAuthService> _authService;
+        private readonly Lazy<ITokenService> _tokenService;
+        private readonly Lazy<IVerificationService> _verificatoinService;
+        private readonly Lazy<IPasswordService> _passwordService;
+        private readonly Lazy<IUserProfileService> _userProfileService;
         private readonly Lazy<IAdminServices> _adminService;
         private readonly Lazy<IPropertyService> _propertyService;
         private readonly Lazy<IBookingService> _bookingService;
@@ -66,26 +74,45 @@ namespace Makanak.Services.Services.ManagerImplement
             _notificationService = new Lazy<INotificationService>(() => new NotificationService(_Uow,notifier,mapper));
 
             _authService = new Lazy<IAuthService>(() => new AuthService(
-                _Uow,
                 userManager,
-                _attachementServices.Value, 
-                configuration,
-                mapper,
-                _emailService.Value ,
-                _notificationService.Value
-            ));
+                TokenService,
+                mapper
 
-            _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, _emailService.Value,configuration ,_notificationService.Value));
+            ));
             
-            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,_attachementServices.Value, _Uow,_notificationService.Value));
+            _tokenService = new Lazy<ITokenService>(() => new TokenService(configuration));
+
+            _verificatoinService = new Lazy<IVerificationService> (() => new VerificationService(
+                userManager,
+                _Uow,
+                AttachementServices,
+                NotificationService,
+                EmailService
+
+                ));
+
+            _passwordService = new Lazy<IPasswordService>(() => new PasswordService(
+                userManager,
+                EmailService,
+                TokenService
+                ));
+            
+            _userProfileService = new Lazy<IUserProfileService>(() => new UserProfileService(
+                userManager,
+                AttachementServices,
+                mapper));
+
+            _adminService = new Lazy<IAdminServices>(() => new AdminServices(_Uow, mapper, EmailService, configuration ,NotificationService));
+            
+            _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,_attachementServices.Value, _Uow, NotificationService));
 
             _paymentService = new Lazy<IPaymentService> (() => new PaymentServices(options));
 
-            _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager,_notificationService.Value));
+            _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager,NotificationService));
             
-            _reviewService = new Lazy<IReviewService>(() => new ReviewService(_Uow, mapper,_notificationService.Value));
+            _reviewService = new Lazy<IReviewService>(() => new ReviewService(_Uow, mapper,NotificationService));
            
-            _disputeService = new Lazy<IDisputeService>(() => new DisputeService(_Uow,mapper,_attachementServices.Value,userManager,_notificationService.Value));
+            _disputeService = new Lazy<IDisputeService>(() => new DisputeService(_Uow,mapper,_attachementServices.Value,userManager,NotificationService));
             
             _amenityService = new Lazy<IAmenityService>(() => new AmenityService(cacheService,_Uow,mapper));
             
@@ -94,10 +121,15 @@ namespace Makanak.Services.Services.ManagerImplement
             _dashboardService = new Lazy<IAdminDashboardService>(() => new AdminDashboardService(_Uow));
 
 
+
         }
         public IEmailService EmailService => _emailService.Value;
         public IAttachementServices AttachementServices => _attachementServices.Value;
         public IAuthService AuthService => _authService.Value;
+        public ITokenService TokenService => _tokenService.Value;
+        public IPasswordService PasswordService => _passwordService.Value;
+        public IUserProfileService UserProfileService => _userProfileService.Value;
+        public IVerificationService VerificationService => _verificatoinService.Value;
         public IAdminServices AdminService => _adminService.Value;
         public IPropertyService PropertyServices => _propertyService.Value;
         public IPaymentService PaymentService => _paymentService.Value;
@@ -108,5 +140,6 @@ namespace Makanak.Services.Services.ManagerImplement
         public IAmenityService AmenityService=> _amenityService.Value;
         public IGovernorateService GovernorateService => _governorateService.Value;
         public INotificationService NotificationService=> _notificationService.Value;
+
     }
 }

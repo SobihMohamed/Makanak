@@ -9,12 +9,18 @@ using Makanak.Abstraction.IServices.NotificationService;
 using Makanak.Abstraction.IServices.PaymentService;
 using Makanak.Abstraction.IServices.PropertyService;
 using Makanak.Abstraction.IServices.ReviewService;
+using Makanak.Abstraction.IServices.User;
+using Makanak.Abstraction.IServicesContract.Token;
 
 namespace Makanak.Abstraction.IServices.Manager
 {
     public interface IServiceManager
     {
         IAuthService AuthService { get; }
+        ITokenService TokenService { get; }
+        IUserProfileService UserProfileService { get; }
+        IPasswordService PasswordService { get; }
+        IVerificationService VerificationService { get; }
         IAdminServices AdminService { get; }
         IEmailService EmailService { get; }
         IAttachementServices AttachementServices { get; }
