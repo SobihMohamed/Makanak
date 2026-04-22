@@ -37,12 +37,20 @@ namespace Makanak.Services.AutoMapper.BookingMapper
             // =================================================================
             CreateMap<Booking, TenantBookingDetailsDto>()
                 .ForMember(d => d.PropertyName, o => o.MapFrom(s => s.Property.Title))
-                .ForMember(d => d.PropertyMainImage, o => o.MapFrom(s => s.Property.MainImageUrl))
                 .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
 
                 // الداتا الحساسة بتظهر بس لو الدفع تم
                 .ForMember(dest => dest.OwnerPhoneNumber, opt => opt.MapFrom(src =>
+
                     IsPaid(src.Status) ? src.Owner.PhoneNumber : null)) // تأكد إن src.Owner موجودة أو استخدم src.Property.Owner
+
+                .ForMember(dest => dest.PricePerNight, opt => opt.MapFrom(src => src.PricePerNight))
+
+                .ForMember(dest => dest.BasePrice, opt => opt.MapFrom(src => src.AmountToPayToOwner))
+
+                .ForMember(dest => dest.PlatformFee, opt => opt.MapFrom(src => src.CommissionPaid))
+
+                .ForMember(dest => dest.TotalPrice, opt => opt.MapFrom(src => src.TotalPrice))
 
                 .ForMember(dest => dest.ExactLocationUrl, opt => opt.MapFrom(src =>
                     IsPaid(src.Status) ? $"http://maps.google.com/?q={src.Property.Latitude},{src.Property.Longitude}" : null))
@@ -62,7 +70,9 @@ namespace Makanak.Services.AutoMapper.BookingMapper
             CreateMap<Booking, OwnerBookingDetailsDto>()
                 .ForMember(d => d.PropertyName, o => o.MapFrom(s => s.Property.Title))
                 .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+                .ForMember(d => d.PropertyMainImage, o => o.MapFrom<UrlResolver<Booking, OwnerBookingDetailsDto>, string>(s => s.Property.MainImageUrl))
 
+                .ForMember(d => d.PropertyImages, o => o.MapFrom(s => s.Property.PropertyImages))
                 // بيانات المستأجر
                 .ForMember(d => d.TenantName, o => o.MapFrom(s => s.Tenant.Name))
                 .ForMember(d => d.TenantImage, o => o.MapFrom(s => s.Tenant.ProfilePictureUrl))
