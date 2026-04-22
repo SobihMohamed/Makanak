@@ -14,25 +14,25 @@ namespace Makanak.Abstraction.IServices.Auth
 
         Task<AuthModelDto> RegisterAsync(RegisterDto registerDto);
 
-        Task<bool> Logout(string email);
+        Task<bool> LogoutAsync(string email);
 
-        Task<CurrentUserDto> GetUserProfileAsync(string email);
+        //Task<CurrentUserDto> GetUserProfileAsync(string email);
 
-        Task<string> InitiateEmailChangeAsync(ChangeEmailDto changeEmailDto, string currentEmail);
+        //Task<string> InitiateEmailChangeAsync(ChangeEmailDto changeEmailDto, string currentEmail);
 
-        Task<bool> ConfirmEmailChangeAsync(VerifyOtpDto verifyOtpDto);
+        //Task<bool> ConfirmEmailChangeAsync(VerifyOtpDto verifyOtpDto);
 
-        Task<CurrentUserDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto, string email);
+        //Task<CurrentUserDto> UpdateProfileAsync(UpdateProfileDto updateProfileDto, string email);
 
-        Task<bool> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email);
+        //Task<bool> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email);
 
-        Task<bool> ForgetPasswordAsync(ForgetPasswordRequestDto forgetPasswordRequestDto);
+        //Task<bool> ForgetPasswordAsync(ForgetPasswordRequestDto forgetPasswordRequestDto);
 
-        Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto);
+        //Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto);
 
-        Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
+        //Task<AuthModelDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
 
-        Task<AuthModelDto> ChangePasswordAsync(ChangePasswordDto changePasswordDto, string email);
+        //Task<AuthModelDto> ChangePasswordAsync(ChangePasswordDto changePasswordDto, string email);
 
     }
 }
