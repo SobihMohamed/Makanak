@@ -94,7 +94,6 @@ namespace Makanak.Services.Services.ManagerImplement
             _passwordService = new Lazy<IPasswordService>(() => new PasswordService(
                 userManager,
                 EmailService,
-                _Uow,
                 TokenService
                 ));
             

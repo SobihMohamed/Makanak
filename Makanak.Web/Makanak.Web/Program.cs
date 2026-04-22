@@ -5,19 +5,29 @@ using Makanak.Presentation.Extensions;
 using Makanak.Shared.Common.Settings;
 using Makanak.Web.Extensions;
 using Makanak.Web.Middleware;
+using SoftBridge.Services.AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Services to the Container
-builder.Services.AddApplicationCoreServices();
-builder.Services.AddPersistenceServices(builder.Configuration);
+// 1. Database & Infrastructure
+builder.Services.InjectDatabaseService(builder.Configuration);
+
+// Add Identity Services & security services 
+builder.Services.InjectIdentityCore();
+builder.Services.InjectRateLimiting();
+// Custom Extensions (Security & CORS)
+builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddCustomCors(builder.Configuration);
+
+// Add Services to the Container 
+builder.Services.AddApplicationServices();
+builder.Services.InjectAutoMapperService();
+
 builder.Services.AddSwaggerDocumentation();
+
 builder.Services.AddSignalR();
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
 
-// Custom Extensions (Security & CORS)
-builder.Services.AddCustomCors(builder.Configuration);
-builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
 
 
 // Build the Application
@@ -50,6 +60,8 @@ app.UseRouting();
 
 // CORS MUST be between UseRouting and UseAuth
 app.UseCors("CorsPolicy");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

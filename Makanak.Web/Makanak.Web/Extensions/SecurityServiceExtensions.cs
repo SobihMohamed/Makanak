@@ -26,47 +26,9 @@ using System.Text.Json.Serialization;
 
 namespace Makanak.Web.Extensions
 {
-    public static class ServiceExtensions
+    public static class SecurityServiceExtensions
     {
-        // added all services related to the application core (AutoMapper, DI, Caching, Background Services)
-        public static IServiceCollection AddApplicationCoreServices(this IServiceCollection services)
-        {
-            services.AddControllers().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-            });
-
-            // AutoMapper
-            services.AddAutoMapper(cfg =>
-            {
-                cfg.AddProfile(new UserProfile());
-                cfg.AddProfile(new AdminProfile());
-                cfg.AddProfile(new PropertyProfile());
-                cfg.AddProfile(new BookingProfile());
-                cfg.AddProfile(new ReviewProfile());
-                cfg.AddProfile(new NotificationProfile());
-                cfg.AddProfile(new DisputeProfile());
-                cfg.AddProfile(new GovernorateProfile());
-                cfg.AddProfile(new AmenityProfile());
-            });
-            services.AddTransient(typeof(UrlResolver<,>));
-
-            // DI & Caching
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<IServiceManager, ServiceManager>();
-            services.AddScoped<IDbInitializer, DbInitialized>();
-            services.AddScoped<IRealTimeNotifier, SignalRNotifier>();
-
-            services.AddMemoryCache();
-            services.AddSingleton<ICacheService, MemoryCacheService>();
-
-            // background service
-            services.AddHostedService<BookingStatusWorker>();
-
-            return services;
-        }
-
-        // 2. added Security & CORS related services for API 
+        // added Security & CORS related services for API 
         public static IServiceCollection AddCustomCors(this IServiceCollection services, IConfiguration config)
         {
             var allowedOrigins = config.GetSection("AllowedOrigins")

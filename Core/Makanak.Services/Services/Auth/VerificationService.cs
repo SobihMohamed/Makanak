@@ -23,28 +23,19 @@ namespace Makanak.Services.Services.Auth
         IEmailService emailService 
         ) : IVerificationService
     {
-        public async Task<bool> ConfirmEmailChangeAsync(VerifyOtpDto verifyOtpDto)
+        public async Task<bool> ConfirmEmailChangeAsync(VerifyOtpDto verifyOtpDto, string currentEmail)
         {
-            var otpRecord = await VerifyAndBurnOtpAsync(verifyOtpDto.Email, verifyOtpDto.Otp, true);
+            var user = await userManager.FindByEmailAsync(currentEmail);
+            if (user == null) throw UserNotFoundException.ByEmail(currentEmail);
 
-            var user = await userManager.FindByIdAsync(otpRecord.UserId);
-            if (user == null) throw UserNotFoundException.ByEmail(otpRecord.Email);
+            // this line will verify the OTP and change the email if the OTP is valid and burn the OTP after successful verification
+            var result = await userManager.ChangeEmailAsync(user, verifyOtpDto.Email, verifyOtpDto.Otp);
+            if (!result.Succeeded) throw new BadRequestException("Invalid OTP");
 
-            user.Email = otpRecord.Email;
-            user.UserName = otpRecord.Email;
-            user.EmailConfirmed = true;
-            user.NormalizedEmail = userManager.NormalizeEmail(user.Email);
-            user.NormalizedUserName = userManager.NormalizeName(user.UserName);
-
-            var result = await userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-            {
-                var errors = result.Errors.Select(e => e.Description);
-                throw new BadRequestException("Email Change Failed", errors);
-            }
+            // make sure to update the username if your application uses email as the username
+            await userManager.SetUserNameAsync(user, verifyOtpDto.Email);
             return true;
         }
-
         public async Task<string> InitiateEmailChangeAsync(ChangeEmailDto changeEmailDto, string currentEmail)
         {
             var user = await userManager.FindByEmailAsync(currentEmail);
@@ -56,25 +47,15 @@ namespace Makanak.Services.Services.Auth
             var isEmailExist = await userManager.FindByEmailAsync(changeEmailDto.NewEmail);
             if (isEmailExist != null) throw new BadRequestException("Email is already in use");
 
-            var otp = await GenerateAndSaveOtpAsync(user.Id, changeEmailDto.NewEmail);
+            // generate OTP for email change using userManager's GenerateChangeEmailTokenAsync method
+            var otp = await userManager.GenerateChangeEmailTokenAsync(user, changeEmailDto.NewEmail);
 
-            await emailService.SendEmailAsync(
-                currentEmail,
-                "Security Alert: Email Change Requested",
-                $"Hello,\nWe received a request to change the email associated with your Makanak account to " +
-                $"({changeEmailDto.NewEmail}).\n\nIf you made this request, you can safely ignore this email." +
-                $"\nIf you did NOT make this request, please contact our support team immediately to secure your account."
-            );
-            await Task.Delay(5000); // Optional: Delay to ensure the first email is sent before sending the OTP email
-
-            await emailService.SendEmailAsync(
-                changeEmailDto.NewEmail,
-                "Confirm New Email - Makanak",
-                $"Use this code to verify your new email: {otp}");
+            await emailService.SendEmailAsync(currentEmail, "Security Alert", $"Email change requested to {changeEmailDto.NewEmail}.");
+            await Task.Delay(2000);
+            await emailService.SendEmailAsync(changeEmailDto.NewEmail, "Confirm New Email - Makanak", $"Your OTP code is: {otp}");
 
             return otp;
         }
-
         public async Task<bool> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email)
         {
             var user = await userManager.FindByEmailAsync(email);
@@ -127,80 +108,23 @@ namespace Makanak.Services.Services.Auth
             }
             return true;
         }
-
         public async Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto)
         {
-            await VerifyAndBurnOtpAsync(verifyOtpDto.Email, verifyOtpDto.Otp,burnIt: false);
+            var user = await userManager.FindByEmailAsync(verifyOtpDto.Email);
+            if (user == null) throw UserNotFoundException.ByEmail(verifyOtpDto.Email);
+
+            // we use the VerifyUserTokenAsync method to verify the OTP against the token
+            // provider for password reset
+            var isValid = await userManager.VerifyUserTokenAsync(
+                user,
+                userManager.Options.Tokens.PasswordResetTokenProvider,
+                UserManager<ApplicationUser>.ResetPasswordTokenPurpose,
+                verifyOtpDto.Otp);
+
+            if (!isValid) throw new BadRequestException("Invalid or Expired OTP");
+
             return true;
         }
 
-        private async Task<string> GenerateAndSaveOtpAsync(string UserId, string email)
-        {
-            var Specification = new UserOtpSpecifications(email);
-            var userOtpRepo = unitOfWork.GetRepo<UserOtp, int>();
-            var oldUserOtp = await userOtpRepo.GetAllWithSpecificationAsync(Specification);
-
-            foreach (var otp in oldUserOtp)
-            {
-                otp.IsUsed = true;
-                userOtpRepo.Update(otp);
-            }
-
-            var newOtp = new Random().Next(100000, 999999).ToString();
-
-            var userOtp = new UserOtp
-            {
-                Email = email,
-                OtpCode = newOtp,
-                ExpirationTime = DateTime.UtcNow.AddMinutes(5),
-                IsUsed = false,
-                UserId = UserId,
-                LastModifiedBy = UserId,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            userOtpRepo.AddAsync(userOtp);
-            await unitOfWork.SaveChangesAsync();
-
-            return newOtp;
-        }
-
-        private async Task<UserOtp> VerifyAndBurnOtpAsync(string email, string otp, bool burnIt)
-        {
-            var userOtpRepo = unitOfWork.GetRepo<UserOtp, int>();
-            var specification = new UserOtpSpecifications(email);
-            var existOtp = await userOtpRepo.GetByIdWithSpecificationsAsync(specification);
-
-            if (existOtp == null) throw new BadRequestException("Invalid Otp");
-
-            if (existOtp.ExpirationTime < DateTime.UtcNow)
-            {
-                existOtp.IsUsed = true;
-                userOtpRepo.Update(existOtp);
-                await unitOfWork.SaveChangesAsync();
-                throw new BadRequestException("Expired Otp");
-            }
-
-            if (existOtp.OtpCode != otp)
-            {
-                existOtp.FailedAttempts += 1;
-                if (existOtp.FailedAttempts >= 3)
-                {
-                    existOtp.IsUsed = true;
-                    userOtpRepo.Update(existOtp);
-                    await unitOfWork.SaveChangesAsync();
-                    throw new BadRequestException("Maximum attempts reached. Please request a new OTP.");
-                }
-                userOtpRepo.Update(existOtp);
-                await unitOfWork.SaveChangesAsync();
-                throw new BadRequestException($"Invalid Otp. You have {3 - existOtp.FailedAttempts} attempts left.");
-            }
-
-            existOtp.IsUsed = burnIt;
-            userOtpRepo.Update(existOtp);
-            await unitOfWork.SaveChangesAsync();
-
-            return existOtp;
-        }
     }
 }

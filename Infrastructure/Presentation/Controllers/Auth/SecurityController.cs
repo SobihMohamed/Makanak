@@ -5,6 +5,7 @@ using Makanak.Shared.Dto_s.User;
 using Makanak.Shared.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ namespace Makanak.Presentation.Controllers.Auth
     public class SecurityController(IServiceManager serviceManager) : AppBaseController
     {
         #region Password Management
+        [EnableRateLimiting("OtpPolicy")]
         [HttpPost("forget-password")]
         public async Task<ActionResult<ApiResponse<string>>> ForgetPassword([FromBody] ForgetPasswordRequestDto forgetPasswordRequestDto)
         {
@@ -38,6 +40,7 @@ namespace Makanak.Presentation.Controllers.Auth
         #endregion
 
         #region Verification & Identity
+        [EnableRateLimiting("OtpPolicy")]
         [HttpPost("verify-otp")]
         public async Task<ActionResult<ApiResponse<string>>> VerifyOtp([FromBody] VerifyOtpDto verifyOtpDto)
         {
@@ -64,10 +67,13 @@ namespace Makanak.Presentation.Controllers.Auth
         }
 
         [Authorize]
+        [EnableRateLimiting("OtpPolicy")]
         [HttpPost("confirm-email-change")]
         public async Task<ActionResult<ApiResponse<string>>> ConfirmEmailChange([FromBody] VerifyOtpDto verifyOtpDto)
         {
-            await serviceManager.VerificationService.ConfirmEmailChangeAsync(verifyOtpDto);
+            var currentEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            await serviceManager.VerificationService.ConfirmEmailChangeAsync(verifyOtpDto, currentEmail!);
             return Success("Email address updated successfully.");
         }
         #endregion

@@ -9,7 +9,7 @@ namespace Makanak.Abstraction.IServices.Auth
     public interface IVerificationService
     {
         Task<string> InitiateEmailChangeAsync(ChangeEmailDto changeEmailDto, string currentEmail);
-        Task<bool> ConfirmEmailChangeAsync(VerifyOtpDto verifyOtpDto);
+        Task<bool> ConfirmEmailChangeAsync(VerifyOtpDto verifyOtpDto, string currentEmail);
         Task<bool> VerifyIdentityAsync(VerifyIdentityDto verifyIdentityDto, string email);
         Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto);
     }
