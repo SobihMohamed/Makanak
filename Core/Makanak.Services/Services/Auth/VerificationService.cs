@@ -8,15 +8,10 @@ using Makanak.Domain.Exceptions.NotFound;
 using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.ResetPassword;
 using Makanak.Services.Specifications.User;
-using Makanak.Shared.Dto_s.Authentication; // مضاف لـ VerifyOtpDto
 using Makanak.Shared.Dto_s.Authentication.Password;
 using Makanak.Shared.Dto_s.User;
 using Makanak.Shared.HelpersFactory;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq; // عشان الـ Select
-using System.Threading.Tasks;
 
 namespace Makanak.Services.Services.Auth
 {
@@ -64,17 +59,19 @@ namespace Makanak.Services.Services.Auth
             var otp = await GenerateAndSaveOtpAsync(user.Id, changeEmailDto.NewEmail);
 
             await emailService.SendEmailAsync(
-                changeEmailDto.NewEmail,
-                "Confirm New Email - Makanak",
-                $"Use this code to verify your new email: {otp}");
-
-            await emailService.SendEmailAsync(
                 currentEmail,
                 "Security Alert: Email Change Requested",
                 $"Hello,\nWe received a request to change the email associated with your Makanak account to " +
                 $"({changeEmailDto.NewEmail}).\n\nIf you made this request, you can safely ignore this email." +
                 $"\nIf you did NOT make this request, please contact our support team immediately to secure your account."
             );
+            await Task.Delay(5000); // Optional: Delay to ensure the first email is sent before sending the OTP email
+
+            await emailService.SendEmailAsync(
+                changeEmailDto.NewEmail,
+                "Confirm New Email - Makanak",
+                $"Use this code to verify your new email: {otp}");
+
             return otp;
         }
 
@@ -133,7 +130,7 @@ namespace Makanak.Services.Services.Auth
 
         public async Task<bool> VerifyOtpAsync(VerifyOtpDto verifyOtpDto)
         {
-            await VerifyAndBurnOtpAsync(verifyOtpDto.Email, verifyOtpDto.Otp, true);
+            await VerifyAndBurnOtpAsync(verifyOtpDto.Email, verifyOtpDto.Otp,burnIt: false);
             return true;
         }
 

@@ -142,7 +142,7 @@ namespace Makanak.Services.Services.Auth
             userOtpRepo.AddAsync(userOtp);
             await unitOfWork.SaveChangesAsync();
 
-            return newOtp;
+            return "Otp Generated and sent";
         }
 
         private async Task<UserOtp> VerifyAndBurnOtpAsync(string email, string otp, bool burnIt)

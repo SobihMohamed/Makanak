@@ -54,8 +54,8 @@ namespace Makanak.Services.Services.Token
             // 7 - create a security token descriptor that contains the claims, signing credentials, and expire date
             // install the package System.IdentityModel.Tokens.Jwt to use the class SecurityTokenDescriptor
             var TokenDesc = new JwtSecurityToken(
-                issuer: configuration.GetSection("JwtTokenSettings:Issuer").Value, // the entity that issues the token, typically the authentication server or service that generates the token
-                audience: configuration.GetSection("JwtTokenSettings:Audience").Value, // the intended recipient of the token, which is usually the resource server or API that will consume the token for authentication and authorization purposes
+                issuer: configuration.GetSection("JWTOptions:Issuer").Value, // the entity that issues the token, typically the authentication server or service that generates the token
+                audience: configuration.GetSection("JWTOptions:Audience").Value, // the intended recipient of the token, which is usually the resource server or API that will consume the token for authentication and authorization purposes
                 claims: claims,
                 expires: expireTime,
                 signingCredentials: signingCredentials
