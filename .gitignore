@@ -363,3 +363,14 @@ MigrationBackup/
 FodyWeavers.xsd
 
 **/wwwroot/uploads/
+
+# ----------------------------------------------------------------------
+# Custom Security Ignores (Makanak Project)
+# ----------------------------------------------------------------------
+
+# Ignore all appsettings files to prevent secret leaks (JWT, DB, Email)
+**/appsettings.json
+**/appsettings.*.json
+
+# ALLOW tracking for the template/example file so the team can use it
+!**/appsettings.example.json
