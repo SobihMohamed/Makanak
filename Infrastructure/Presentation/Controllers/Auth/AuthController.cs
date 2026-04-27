@@ -1,13 +1,8 @@
-﻿using Makanak.Abstraction.IServices.Auth;
-using Makanak.Abstraction.IServices.Manager;
+﻿using Makanak.Abstraction.IServices.Manager;
 using Makanak.Shared.Dto_s;
 using Makanak.Shared.Dto_s.Authentication;
-using Makanak.Shared.Dto_s.Authentication.Password;
-using Makanak.Shared.Dto_s.User;
 using Makanak.Shared.Responses;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Makanak.Presentation.Controllers.Auth
 {

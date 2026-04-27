@@ -15,6 +15,7 @@ builder.Services.InjectDatabaseService(builder.Configuration);
 // Add Identity Services & security services 
 builder.Services.InjectIdentityCore();
 builder.Services.InjectRateLimiting();
+
 // Custom Extensions (Security & CORS)
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddCustomCors(builder.Configuration);
