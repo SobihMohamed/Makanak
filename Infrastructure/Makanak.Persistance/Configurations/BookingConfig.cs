@@ -25,6 +25,7 @@ namespace Makanak.Persistance.Configurations
             builder.Property(b => b.SpecialRequests).HasMaxLength(1000);
             builder.Property(b => b.CancellationReason).HasMaxLength(1000);
             builder.Property(b => b.CheckInQrCode).HasMaxLength(1000);
+            builder.Property(b => b.RefundedAmount).HasColumnType("decimal(18,2)");
 
             // Booking has one Property but Property has many Bookings
             builder.HasOne(p=>p.Property)

@@ -116,6 +116,23 @@ namespace Makanak.Shared.HelpersFactory
             };
         }
 
+        public static CreateNotificationDto RefundStatusNotification(string tenantId, bool isRefunded, int bookingId)
+        {
+            string title = isRefunded ? "تم استرداد العربون 💸" : "إلغاء بدون استرداد ℹ️";
+
+            string message = isRefunded
+                ? "تم معالجة طلب الإلغاء وتطبيق سياسة الاسترجاع بنجاح. سيتم إرجاع المبلغ المستحق إلى حسابك خلال 7 إلى 14 يوم عمل حسب سياسة البنك."
+                : "تم معالجة طلب الإلغاء. نعتذر، لا يحق لك استرداد العربون بناءً على سياسة الإلغاء الخاصة بالمنصة لتجاوز الوقت المسموح به للإلغاء المجاني.";
+
+            return new CreateNotificationDto
+            {
+                UserId = tenantId,
+                Title = title,
+                Message = message,
+                ReferenceId = bookingId.ToString(),
+                NotificationType = NotificationType.BookingCancelled
+            };
+        }
         // --------------------------------------------------------
         // 4. التشيك إن والانتهاء والتقييم (Check-In & Reviews)
         // --------------------------------------------------------

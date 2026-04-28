@@ -112,18 +112,17 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
         }
 
         [Authorize(Roles = "Tenant")]
-        [HttpPost("{bookingId}/payment")]
-        public async Task<ActionResult<ApiResponse<BookingPaymentDto>>> CreateOrUpdatePaymentIntent(int bookingId)
+        [HttpPost("{bookingId}/pay")] 
+        public async Task<ActionResult<ApiResponse<BookingPaymentDto>>> InitiatePayment(int bookingId)
         {
             var UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var result = await serviceManager.BookingService.CreateBookingPaymentAsync(bookingId , UserId!);
+            var result = await serviceManager.BookingService.CreateBookingPaymentAsync(bookingId, UserId!);
 
             if (result == null)
-                return BadRequestError("Problem creating payment intent");
+                return BadRequestError("Problem initiating payment");
 
-            return Success(result, "Payment Created Successfully");
+            return Success(result, "Payment Initiated Successfully");
         }
-    
     }
 }

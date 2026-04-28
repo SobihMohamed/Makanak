@@ -30,96 +30,100 @@ namespace Makanak.Services.Services.BookingImplement
 
         public async Task<TenantBookingDetailsDto> CreateBookingAsync(CreateBookingDto dto, string tenantId)
         {
-            #region check user status
-            var user = await userManager.FindByIdAsync(tenantId);
+            // 1. Get User & Property
+            var user = await GetActiveUserAsync(tenantId);
+            var property = await GetPropertyAsync(dto.PropertyId);
 
+            // 2. Business Validations (Private Method)
+            await ValidateBookingRulesAsync(dto, tenantId, property);
+
+            // 3. Financial Calculations (Private Method)
+            var totalDays = (dto.CheckOutDate.Date - dto.CheckInDate.Date).Days;
+            var financials = CalculateFinancials(property.PricePerNight, totalDays);
+
+            // 4. Create Entity & Map
+            var booking = mapper.Map<Booking>(dto);
+            booking.TenantId = tenantId;
+            booking.OwnerId = property.OwnerId;
+            booking.Property = property;
+            booking.TotalDays = totalDays;
+            booking.PricePerNight = property.PricePerNight;
+            booking.TotalPrice = financials.TotalAmountToPay;
+            booking.CommissionPaid = financials.Commission;
+            booking.AmountToPayToOwner = financials.AmountToOwner;
+            booking.Status = BookingStatus.PendingOwnerApproval;
+            booking.CheckInQrCode = Guid.NewGuid().ToString();
+            booking.IsQrScanned = false;
+
+            // 5. Save & Notify
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+            bookingRepo.AddAsync(booking);
+
+            var result = await unitOfWork.SaveChangesAsync();
+            if (result <= 0) throw new Exception("Failed to create booking.");
+
+            await notificationService.SendNotificationAsync(
+                NotificationFactory.BookingRequest(booking.OwnerId, user.Name, property.Title, booking.Id)
+            );
+
+            return mapper.Map<TenantBookingDetailsDto>(booking);
+        }
+     
+        #region Helper Methods
+
+        private async Task<ApplicationUser> GetActiveUserAsync(string tenantId)
+        {
+            var user = await userManager.FindByIdAsync(tenantId);
             if (user == null || user.UserStatus != UserStatus.Active)
                 throw new BadRequestException("Account not verified.");
+            return user;
+        }
 
-            #endregion
+        private async Task<Property> GetPropertyAsync(int propertyId)
+        {
+            var propertyRepo = unitOfWork.GetRepo<Property, int>();
+            var specProperty = new PropertySpecifications(propertyId);
+            var property = await propertyRepo.GetByIdWithSpecificationsAsync(specProperty);
 
+            if (property == null) throw new PropertyNotFound(propertyId);
+            return property;
+        }
+
+        private async Task ValidateBookingRulesAsync(CreateBookingDto dto, string tenantId, Property property)
+        {
             if (dto.CheckInDate >= dto.CheckOutDate)
                 throw new BadRequestException("Check-out date must be after check-in date.");
 
             if (dto.CheckInDate < DateTime.Today)
                 throw new BadRequestException("Cannot book dates in the past.");
 
-            // validation of the property availability for the given dates
-            var propertyId = dto.PropertyId;
-
-            // check exist 
-            var propertyRepo = unitOfWork.GetRepo<Property, int>();
-
-            // generate specification
-            var specProperty = new PropertySpecifications(propertyId);
-
-            // get property 
-            var property = await propertyRepo.GetByIdWithSpecificationsAsync(specProperty);
-
-            #region Validations           
-            if (property == null)
-                throw new PropertyNotFound(propertyId);
-
-            if(property.PropertyStatus != PropertyStatus.Accepted)
+            if (property.PropertyStatus != PropertyStatus.Accepted)
                 throw new BadRequestException("Property is not available for booking.");
 
-            if(property.OwnerId == tenantId)
+            if (property.OwnerId == tenantId)
                 throw new BadRequestException("Owners cannot book their own properties.");
 
-            if(property.MaxGuests < dto.NumberOfGuests)
+            if (property.MaxGuests < dto.NumberOfGuests)
                 throw new BadRequestException($"The property can accommodate a maximum of {property.MaxGuests} guests.");
 
-            var IsPropertyAvailable = await IsPropertyAvailableAsync(propertyId, dto.CheckInDate, dto.CheckOutDate);
-            
-            if(!IsPropertyAvailable)
+            var isAvailable = await IsPropertyAvailableAsync(property.Id, dto.CheckInDate, dto.CheckOutDate);
+            if (!isAvailable)
                 throw new BadRequestException("Property is not available for the selected dates.");
-            #endregion
-
-            // --- Financial calculations ---
-
-            var totalDays = (dto.CheckOutDate.Date - dto.CheckInDate.Date).Days;
-            var baseAmount = totalDays * property.PricePerNight; // مثلا: 5000
-
-            var commissionPercentage = 0.10m;
-            var commissionAmount = baseAmount * commissionPercentage; // مثلا: 500
-
-            var amountToOwner = baseAmount; // 5000
-
-            var totalAmountToPayByTenant = baseAmount + commissionAmount; 
-
-            // --- create booking entity ---
-            var booking = mapper.Map<Booking>(dto);
-
-            booking.TenantId = tenantId;
-            booking.OwnerId = property.OwnerId;
-            booking.Property = property;
-
-            booking.TotalDays = totalDays;
-            booking.PricePerNight = property.PricePerNight;
-
-            booking.TotalPrice = totalAmountToPayByTenant; // 5500
-            booking.CommissionPaid = commissionAmount; // 500
-            booking.AmountToPayToOwner = amountToOwner; // 5000
-
-            booking.Status = BookingStatus.PendingOwnerApproval;
-            booking.CheckInQrCode = Guid.NewGuid().ToString();
-            booking.IsQrScanned = false;
-            // save to database
-            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-            bookingRepo.AddAsync(booking);
-
-            var result = await unitOfWork.SaveChangesAsync();
-
-            await notificationService.SendNotificationAsync(
-                NotificationFactory.BookingRequest(booking.OwnerId, user.Name, property.Title ,booking.Id)
-            );
-
-            if (result <= 0)
-                throw new Exception("Failed to create booking.");
-
-            return mapper.Map<TenantBookingDetailsDto>(booking);
         }
 
+        private (decimal BaseAmount, decimal Commission, decimal AmountToOwner, decimal TotalAmountToPay) CalculateFinancials(decimal pricePerNight, int totalDays)
+        {
+            var baseAmount = totalDays * pricePerNight;
+            var commissionPercentage = 0.10m;
+            var commissionAmount = baseAmount * commissionPercentage;
+            var amountToOwner = baseAmount;
+            var totalAmountToPay = baseAmount + commissionAmount;
+
+            return (baseAmount, commissionAmount, amountToOwner, totalAmountToPay);
+        }
+
+        #endregion
+      
         public async Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams)
         {
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
@@ -209,59 +213,83 @@ namespace Makanak.Services.Services.BookingImplement
 
             return mapper.Map<ScanQrResponseDto>(booking);
         }
-  
+
         public async Task<bool> CancelBookingAsync(int bookingId, string userId, string role)
         {
-            // generate specification
             var spec = new BookingSpecifications(bookingId);
-
-            // get booking repo
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-
-            // get booking with specification
             var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
-            
-            if (booking == null)
-                throw new BookingNotFound(bookingId);
 
-            // authorization check 
-            if(userId != booking.TenantId && userId != booking.OwnerId && role != "Admin")
+            if (booking == null) throw new BookingNotFound(bookingId);
+
+            if (userId != booking.TenantId && userId != booking.OwnerId && role != "Admin")
                 throw new UnauthorizedAccessException("You do not have permission to cancel this booking.");
 
-            //   أي حالة قبل السكن ينفع تتلغي (طلب موافقة، مستني دفع، أو اندفع فعلاً
             var cancellableStatuses = new[] {
                 BookingStatus.PendingOwnerApproval,
                 BookingStatus.PendingPayment,
-                BookingStatus.PaymentReceived 
+                BookingStatus.PaymentReceived
             };
 
             if (!cancellableStatuses.Contains(booking.Status))
                 throw new BadRequestException("Only bookings that are not checked-in or completed can be canceled.");
 
-            //   لو الحالة PaymentReceived، لازم نرجع الفلوس (Refund)
-            if (booking.Status == BookingStatus.PaymentReceived)
+            string cancelledBy = (userId == booking.TenantId) ? "Tenant" : (userId == booking.OwnerId ? "Owner" : "Admin");
+
+            // 💡 حفظنا الحالة قبل ما نغيرها
+            bool wasPaid = booking.Status == BookingStatus.PaymentReceived;
+
+            if (wasPaid)
             {
-                // هنا هتحط كود الـ Stripe Refund لاحقاً
-                booking.IsRefunded = true;
+                decimal refundAmount = 0;
+
+                // if cancelled by owner or admin, refund full commission
+                if (cancelledBy == "Owner" || cancelledBy == "Admin")
+                    refundAmount = booking.CommissionPaid;
+                else // if cancelled by tenant, apply the time-based refund rules
+                    refundAmount = CalculateRefundAmount(booking.CheckInDate, booking.CommissionPaid);
+
+                if (refundAmount > 0)
+                {
+                    if (string.IsNullOrEmpty(booking.TransactionId))
+                        throw new BadRequestException("Cannot refund: Transaction ID is missing.");
+
+                    bool refundSuccess = await paymentService.RefundTransactionAsync(booking.TransactionId, refundAmount);
+
+                    if (!refundSuccess)
+                        throw new Exception("Failed to process refund with the payment gateway.");
+
+                    booking.IsRefunded = true;
+                    booking.RefundedAmount = refundAmount;
+                }
             }
 
+            // Update booking status and reason
             booking.Status = BookingStatus.Cancelled;
+            booking.CancellationReason = $"Cancelled by {cancelledBy}. Refund policy applied.";
 
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
+
+            // send notifications only if the cancellation was successful
             if (result > 0)
             {
+                // 1. send to the other party (owner or tenant) about the cancellation
                 string targetId = (userId == booking.TenantId) ? booking.OwnerId : booking.TenantId;
-                string cancelledBy = (userId == booking.TenantId) ? "Tenant" : "Owner";
-
-                if (role == "Admin") cancelledBy = "Admin";
-                booking.CancellationReason = cancelledBy;
-
-
                 await notificationService.SendNotificationAsync(
                     NotificationFactory.BookingCancelled(targetId, cancelledBy, booking.Id)
                 );
+
+                // 2. send refund status notification to tenant if applicable
+                // ✅ هنا صلحناها واستخدمنا wasPaid
+                if (wasPaid && cancelledBy == "Tenant")
+                {
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.RefundStatusNotification(booking.TenantId, booking.IsRefunded, booking.Id)
+                    );
+                }
             }
+
             return result > 0;
         }
 
@@ -315,94 +343,74 @@ namespace Makanak.Services.Services.BookingImplement
 
         public async Task<BookingPaymentDto> CreateBookingPaymentAsync(int bookingId, string UserId)
         {
-            // get booking repo 
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-            // get spec 
             var spec = new BookingSpecifications(bookingId);
-            //get booking 
             var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
 
             if (booking == null) throw new BookingNotFound(bookingId);
 
-            // check user 
-            if(booking.TenantId != UserId)
+            if (booking.TenantId != UserId)
                 throw new UnauthorizedAccessException("You do not have permission to pay for this booking.");
 
             if (booking.PaymentDeadline.HasValue && booking.PaymentDeadline.Value < DateTime.UtcNow)
             {
                 booking.Status = BookingStatus.Cancelled;
                 booking.CancellationReason = "Payment time expired (Auto-Cancelled).";
-                
+
                 bookingRepo.Update(booking);
                 await unitOfWork.SaveChangesAsync();
 
                 throw new BadRequestException("Time expired! You missed the payment window.");
             }
 
-            // comission only paied online
-            //var amountToPay = booking.CommissionPaid;
-
-            // chcek on booking status 
             if (booking.Status != BookingStatus.PendingPayment)
                 throw new BadRequestException("You cannot pay for this booking until the owner approves it.");
 
-            #region Payment for testing
-            booking.Status = BookingStatus.PaymentReceived;
-            booking.PaymentIntentId = "test_intent_" + Guid.NewGuid().ToString().Substring(0, 8);
-            booking.ClientSecret = "test_secret_for_mocking";
+            // 1. Prepare PaymentIntentInputDto
+            var paymentIntentRequest = new PaymentIntentInputDto
+            {
+                BookingId = booking.Id,
+                AmountToPayOnline = booking.CommissionPaid, // commission only, owner will get the rest
+                TotalDays = booking.TotalDays,
+                PropertyTitle = booking.Property?.Title ?? "Makanak Property",
+                TenantFirstName = booking.Tenant?.Name?.Split(' ').FirstOrDefault() ?? "Guest",
+                TenantLastName = booking.Tenant?.Name?.Split(' ').Skip(1).FirstOrDefault() ?? "User",
+                TenantEmail = booking.Tenant?.Email ?? "dummy@email.com",
+                TenantPhoneNumber = booking.Tenant?.PhoneNumber ?? "01000000000"
+            };
+
+            // 2. send to payment service to create PaymentIntent
+            var paymentDto = await paymentService.CreatePaymentIntentAsync(paymentIntentRequest);
+
+            // 3. save the PaymentIntentId and ClientSecret to the booking
+            booking.PaymentIntentId = paymentDto.PaymentIntentId;
+            booking.ClientSecret = paymentDto.ClientSecret;
+
             bookingRepo.Update(booking);
             await unitOfWork.SaveChangesAsync();
-            if (booking.Property != null && booking.Tenant != null)
-            {
-                await notificationService.SendNotificationAsync(
-                    NotificationFactory.PaymentSuccess_ToTenant(booking.TenantId, booking.Property.Title, booking.Id)
-                );
 
-                await notificationService.SendNotificationAsync(
-                    NotificationFactory.PaymentSuccess_ToOwner(booking.OwnerId, booking.Tenant.Name, booking.Id)
-                );
-
-            }
-            return new BookingPaymentDto
-            {
-                PaymentIntentId = booking.PaymentIntentId,
-                ClientSecret = booking.ClientSecret,
-                BookingId = booking.Id,
-                Status = booking.Status.ToString() // هترجع هنا "PaymentReceived"
-            };
-            #endregion
-            // call payment service to send intent id old exist
-            //var paymentDto = await paymentService.CreateOrUpdatePaymentIntent(booking.PaymentIntentId!, amountToPay);
-
-            //paymentDto.BookingId = booking.Id;       
-            //paymentDto.Status = booking.Status.ToString(); 
-
-            //booking.PaymentIntentId = paymentDto.PaymentIntentId;
-            //booking.ClientSecret = paymentDto.ClientSecret;
-
-            //bookingRepo.Update(booking);
-            //await unitOfWork.SaveChangesAsync();
-
-            //return paymentDto;
+            // 4. return the paymentDto with bookingId and status
+            paymentDto.BookingId = booking.Id;
+            paymentDto.Status = booking.Status.ToString();
+            return paymentDto;
         }
 
-        public async Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus)
+        public async Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus, string? transactionId = null)
         {
-            // generate specification
             var spec = new BookingPaymentSpecififcations(paymentIntentId);
-
-            // get repo 
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
-
-            // get booking with specification
             var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
-        
+
             if (booking == null)
                 throw new BookingNotFoundByPaymentIntentId(paymentIntentId);
 
             booking.Status = newStatus;
 
-            // if new status is completed , set IsQrScanned to true
+            if (newStatus == BookingStatus.PaymentReceived && !string.IsNullOrEmpty(transactionId))
+            {
+                booking.TransactionId = transactionId;
+            }
+
             if (newStatus == BookingStatus.Completed)
                 booking.IsQrScanned = true;
 
@@ -570,6 +578,17 @@ namespace Makanak.Services.Services.BookingImplement
 
             // 4. نرجع الـ dto اللي عدلنا عليه
             return dto;
+        }
+
+        private decimal CalculateRefundAmount(DateTime checkInDate, decimal commissionPaid)
+        {
+            var timeUntilCheckIn = checkInDate.Date - DateTime.UtcNow.Date;
+            if (timeUntilCheckIn.TotalDays >= 4)
+                return commissionPaid;
+            else if (timeUntilCheckIn.TotalHours >= 48)
+                return commissionPaid * 0.5m;
+            else
+                return 0m;
         }
     }
 }

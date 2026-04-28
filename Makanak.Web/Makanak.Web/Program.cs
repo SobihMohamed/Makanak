@@ -21,13 +21,13 @@ builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment
 builder.Services.AddCustomCors(builder.Configuration);
 
 // Add Services to the Container 
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.InjectAutoMapperService();
 
 builder.Services.AddSwaggerDocumentation();
 
 builder.Services.AddSignalR();
-builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
+builder.Services.Configure<PaymobSettings>(builder.Configuration.GetSection("StripeSettings"));
 
 
 
