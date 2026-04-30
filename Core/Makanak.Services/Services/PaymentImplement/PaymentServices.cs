@@ -43,7 +43,7 @@ namespace Makanak.Services.Services.PaymentImplement
             {
                 amount = amountInCents,
                 currency = "EGP",
-                payment_methods = new[] { _paymobSettings.CardIntegrationId },
+                payment_methods = _paymobSettings.IntegrationIds,
                 special_reference = input.BookingId.ToString(),
                 notification_url = _paymobSettings.NotificationUrl,
                 redirection_url = _paymobSettings.RedirectionUrl,
@@ -94,9 +94,7 @@ namespace Makanak.Services.Services.PaymentImplement
             );
 
             request.Content = JsonContent.Create(payload);
-            // قبل الـ SendAsync مباشرة
-            Console.WriteLine($"SECRET KEY: [{_paymobSettings.SecretKey}]");
-            Console.WriteLine($"AUTH HEADER: {request.Headers.Authorization}");
+
             var response = await _httpClient.SendAsync(request);
 
 

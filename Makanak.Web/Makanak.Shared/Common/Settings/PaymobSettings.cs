@@ -10,5 +10,6 @@
         public string RedirectionUrl {  get; set; } = string.Empty;
         public string HmacSecret { get; set; } = string.Empty;
         public string IntentionApiUrl { get; set; } = string.Empty;
+        public int[] IntegrationIds { get; set; } = Array.Empty<int>();
     }
 }
