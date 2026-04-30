@@ -3,11 +3,6 @@ using Makanak.Domain.Models.Identity;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Domain.Models.ReviewEntities;
 using Makanak.Shared.EnumsHelper.Booking;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Makanak.Domain.Models.BookingEntities
 {
@@ -31,12 +26,14 @@ namespace Makanak.Domain.Models.BookingEntities
 
         public string? CancellationReason { get; set; } 
         public bool IsRefunded { get; set; } = false; // هل رجعت العربون للمستأجر؟
+        public decimal RefundedAmount { get; set; } = 0m; // المبلغ اللي رجع فعلياً (ممكن يكون 100% أو 50%)
         public bool HasDispute { get; set; } = false; // هل فيه خناقة؟
 
         public int NumberOfGuests { get; set; }
         public string? SpecialRequests { get; set; } // "ملاحظات إضافية"
         
         public string? PaymentIntentId { get; set; } // رقم عملية الدفع
+        public string? TransactionId { get; set; } // (رقم العملية الفعلي - بعد الدفع)
         public string? ClientSecret { get; set; }
 
         public bool IsPaymentWarningSent { get; set; } = false;

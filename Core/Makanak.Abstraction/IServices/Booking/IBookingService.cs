@@ -1,5 +1,6 @@
 ﻿using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Booking_Params;
+using Makanak.Shared.Dto_s.Admin;
 using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
@@ -16,9 +17,11 @@ namespace Makanak.Abstraction.IServices.Booking
         Task<bool> IsPropertyAvailableAsync(int propertyId, DateTime checkIn, DateTime checkOut);
 
         Task<Pagination<BookingDto>> GetTenantBookingsAsync(string tenantId, BookingSpecParams bookingParams);
+        Task<Pagination<BookingDto>> GetAllBookingsForAdminAsync(BookingSpecParams bookingParams);
 
         Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams);
         Task<TenantBookingDetailsDto> GetTenantBookingByIdAsync(int bookingId, string tenantId);
+        Task<AdminBookingDetailsDto> GetAdminBookingByIdAsync(int bookingId);
         Task<OwnerBookingDetailsDto> GetOwnerBookingByIdAsync(int bookingId, string ownerId);
         Task<bool> CancelBookingAsync(int bookingId, string userId, string role);
 
@@ -28,7 +31,7 @@ namespace Makanak.Abstraction.IServices.Booking
 
         Task<BookingPaymentDto> CreateBookingPaymentAsync(int bookingId, string UserId);
 
-        Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus);
+        Task<bool> UpdateBookingStatusByBookingIdAsync(int bookingId, BookingStatus newStatus, string? transactionId = null);
 
         Task ProcessAutomatedStatusesAsync();
     }

@@ -7,8 +7,8 @@ namespace Makanak.Services.Specifications.BookingSpec
 {
     public class BookingPaymentSpecififcations : BaseSpecifications<Booking,int>
     {
-        public BookingPaymentSpecififcations(string PaymentIntentId)
-            :base(b=> b.PaymentIntentId == PaymentIntentId)
+        public BookingPaymentSpecififcations(int bookingId)
+            :base(b=> b.Id == bookingId)
         {
             AddInclude(b => b.Tenant);
             AddInclude(b => b.Property);

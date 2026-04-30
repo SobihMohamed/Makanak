@@ -15,24 +15,25 @@ builder.Services.InjectDatabaseService(builder.Configuration);
 // Add Identity Services & security services 
 builder.Services.InjectIdentityCore();
 builder.Services.InjectRateLimiting();
+
 // Custom Extensions (Security & CORS)
 builder.Services.AddJwtAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddCustomCors(builder.Configuration);
 
 // Add Services to the Container 
-builder.Services.AddApplicationServices();
+builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.InjectAutoMapperService();
 
 builder.Services.AddSwaggerDocumentation();
 
 builder.Services.AddSignalR();
-builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("StripeSettings"));
 
 
 
 // Build the Application
 var app = builder.Build();
-
+// في Program.cs مؤقتاً
+Console.WriteLine($"ENV: {app.Environment.EnvironmentName}");
 // Data Seeding Configuration
 await app.SeedDatabaseAsync();
 

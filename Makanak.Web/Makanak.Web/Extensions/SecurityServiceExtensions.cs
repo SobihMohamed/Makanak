@@ -1,28 +1,7 @@
-﻿using Makanak.Abstraction.IServices.Cashing;
-using Makanak.Abstraction.IServices.Manager;
-using Makanak.Abstraction.IServices.RealTimeNotifier;
-using Makanak.Domain.Contracts.InitializerDB;
-using Makanak.Domain.Contracts.UOW;
-using Makanak.Persistance.Implements.InitializerImplement;
-using Makanak.Persistance.Implements.RealTimeNotifications;
-using Makanak.Persistance.Implements.UOW;
-using Makanak.Services.AutoMapper.Admin;
-using Makanak.Services.AutoMapper.AmenityMapper;
-using Makanak.Services.AutoMapper.BookingMapper;
-using Makanak.Services.AutoMapper.DisputeMapper;
-using Makanak.Services.AutoMapper.GovernorateMapper;
-using Makanak.Services.AutoMapper.NotificationMapper;
-using Makanak.Services.AutoMapper.PropertyMapper;
-using Makanak.Services.AutoMapper.Resolver;
-using Makanak.Services.AutoMapper.ReviewMapper;
-using Makanak.Services.AutoMapper.User;
-using Makanak.Services.Services.BackgroundServices;
-using Makanak.Services.Services.CashingImplement;
-using Makanak.Services.Services.ManagerImplement;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Text.Json.Serialization;
+
 
 namespace Makanak.Web.Extensions
 {
@@ -31,6 +10,7 @@ namespace Makanak.Web.Extensions
         // added Security & CORS related services for API 
         public static IServiceCollection AddCustomCors(this IServiceCollection services, IConfiguration config)
         {
+            // 1. Get the allowed origins from configuration
             var allowedOrigins = config.GetSection("AllowedOrigins")
                 .Get<string[]>() ?? Array.Empty<string>();
 
@@ -54,26 +34,29 @@ namespace Makanak.Web.Extensions
         {
             services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;// Set the default authentication scheme to JWT Bearer not cookie-based authentication
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; // if unAuthorized, challenge the user to authenticate using JWT Bearer
             }).AddJwtBearer(options =>
             {
-                options.SaveToken = false;
+                options.SaveToken = false; // do not save the token in the AuthenticationProperties after a successful authentication
 
-                options.RequireHttpsMetadata = env.IsProduction(); // enforce HTTPS in production
-
+                options.RequireHttpsMetadata = env.IsProduction(); // enforce HTTPS in production prevent Man-in-the-Middle (MitM) Attacks
+                // 4 test the JWT token validation parameters 
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
-                    ValidateIssuer = true,
-                    ValidIssuer = config["JWTOptions:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = config["JWTOptions:Audience"],
-                    ValidateLifetime = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWTOptions:SecurityKey"])),
-                    ClockSkew = TimeSpan.Zero
+                    ValidateIssuer = true, // Validate the issuer of the token
+                    ValidIssuer = config["JWTOptions:Issuer"], // The expected issuer of the token, as specified in the configuration
+                    
+                    ValidateAudience = true, // Validate the audience of the token
+                    ValidAudience = config["JWTOptions:Audience"], // The expected audience of the token, as specified in the configuration
+                    
+                    ValidateLifetime = true, // Validate the token's expiration
+                    
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWTOptions:SecurityKey"])), // The key used to sign the token
+                    ClockSkew = TimeSpan.Zero // No tolerance for the token expiration no 5 min after expires
                 };
-
-                // SignalR Events
+                // 5. added Signal-R support for JWT token in query string
+                // problem is the JWT token is not sent in the Authorization header for WebSocket connections, so we need to extract it from the query string
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
