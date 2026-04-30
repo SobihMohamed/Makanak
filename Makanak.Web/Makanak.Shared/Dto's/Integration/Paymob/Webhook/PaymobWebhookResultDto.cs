@@ -8,7 +8,7 @@ namespace Makanak.Shared.Dto_s.Integration.Paymob.Webhook
     {
         public bool IsValid { get; set; } // الـ HMAC سليم ولا لأ
         public bool IsSuccess { get; set; } // الدفع نجح ولا فشل
-        public string IntentionId { get; set; } = string.Empty;
+        public int BookingId { get; set; }
         public string TransactionId { get; set; } = string.Empty;
     }
 }

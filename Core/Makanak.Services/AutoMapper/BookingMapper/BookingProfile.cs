@@ -2,6 +2,7 @@
 using Makanak.Domain.Models.BookingEntities;
 using Makanak.Domain.Models.PropertyEntities;
 using Makanak.Services.AutoMapper.Resolver;
+using Makanak.Shared.Dto_s.Admin;
 using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Property;
 using Makanak.Shared.EnumsHelper.Booking;
@@ -81,6 +82,17 @@ namespace Makanak.Services.AutoMapper.BookingMapper
                 // صورة البطاقة تظهر للمالك بس لو الحجز اتدفع عشان يطابقها
                 .ForMember(d => d.TenantIdentityImage, o => o.MapFrom(s =>
                     IsPaid(s.Status) ? s.Tenant.NationalIdImageFrontUrl : null));
+
+            CreateMap<Booking, AdminBookingDetailsDto>()
+                .ForMember(d => d.Status, o => o.MapFrom(s => s.Status.ToString()))
+                .ForMember(d => d.PropertyTitle, o => o.MapFrom(s => s.Property.Title))
+                .ForMember(d => d.PropertyMainImage, o => o.MapFrom<UrlResolver<Booking, AdminBookingDetailsDto>, string>(s => s.Property.MainImageUrl))
+                .ForMember(d => d.PropertyImages, o => o.MapFrom(s => s.Property.PropertyImages))
+                .ForMember(d => d.TenantName, o => o.MapFrom(s => s.Tenant.Name))
+                .ForMember(d => d.TenantPhoneNumber, o => o.MapFrom(s => s.Tenant.PhoneNumber))
+
+                .ForMember(d => d.OwnerName, o => o.MapFrom(s => s.Owner.Name))
+                .ForMember(d => d.OwnerPhoneNumber, o => o.MapFrom(s => s.Owner.PhoneNumber));
 
             CreateMap<CreateBookingDto, Booking>();
         }

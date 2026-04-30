@@ -1,4 +1,5 @@
-﻿using Makanak.Abstraction.IServices.Manager;
+﻿using Makanak.Abstraction.IServices.Booking;
+using Makanak.Abstraction.IServices.Manager;
 using Makanak.Shared.EnumsHelper.Booking;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,10 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Makanak.Presentation.Controllers.Payment_Controller
 {
-    [AllowAnonymous]
     public class PaymentController(IServiceManager serviceManager, ILogger<PaymentController> logger) : AppBaseController
     {
-        [HttpPost("paymob-webhook")]
+        [AllowAnonymous] // 🔓 السماح لأي حد يبعته، لأن الريكويست جاي من Paymob
+        [HttpPost("/api/payment/paymob-webhook")]
         public async Task<ActionResult> PaymobWebhook([FromQuery] string hmac)
         {
             if (string.IsNullOrEmpty(hmac))
@@ -32,17 +33,51 @@ namespace Makanak.Presentation.Controllers.Payment_Controller
             }
 
             // 3. تحديث الحجز بناءً على النتيجة النظيفة اللي رجعت
-            var newStatus = webhookResult.IsSuccess ? BookingStatus.PaymentReceived : BookingStatus.PaymentFailed;
-            var transactionId = webhookResult.IsSuccess ? webhookResult.TransactionId : null;
+            var newStatus = webhookResult.IsSuccess
+                ? BookingStatus.PaymentReceived
+                : BookingStatus.PaymentFailed;
+            //var transactionId = webhookResult.IsSuccess ? webhookResult.TransactionId : null;
 
-            await serviceManager.BookingService.UpdateBookingStatusByIntentIdAsync(
-                webhookResult.IntentionId,
+            await serviceManager.BookingService.UpdateBookingStatusByBookingIdAsync(
+                webhookResult.BookingId,
                 newStatus,
-                transactionId
+                webhookResult.TransactionId
             );
 
-            logger.LogInformation("Webhook processed successfully for Intention: {IntId}", webhookResult.IntentionId);
+            logger.LogInformation("Webhook processed successfully for BookingId: {BookingId}", webhookResult.BookingId);
             return Success("Webhook Processed Successfully");
         }
+
+        [HttpPost("refund/{bookingId}/confirm")]
+        [Authorize(Roles = "Admin")] // 🔒 حماية قسوى للأدمن فقط
+        public async Task<ActionResult> ConfirmRefund(int bookingId)
+        {
+            var result = await serviceManager.PaymentService.ConfirmManualRefundAsync(bookingId);
+
+            if (!result)
+                return BadRequestError("Failed to confirm refund. Check booking status.");
+
+            return Success("Refund confirmed successfully. Tenant has been notified.");
+        }
+
+        [HttpPost("refund/{bookingId}/reject")]
+        [Authorize(Roles = "Admin")] // 🔒 للأدمن فقط
+        public async Task<ActionResult> RejectRefund(int bookingId, [FromBody] RejectRefundDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Reason))
+                return BadRequestError("Rejection reason is required.");
+
+            var result = await serviceManager.PaymentService.RejectManualRefundAsync(bookingId, request.Reason);
+
+            if (!result)
+                return BadRequestError("Failed to reject refund.");
+
+            return Success("Refund rejected successfully. Tenant has been notified.");
+        }
     }
+    public class RejectRefundDto
+    {
+        public string Reason { get; set; }
+    }
+    // DTO صغير عشان الفرونت يبعت فيه سبب الرفض
 }

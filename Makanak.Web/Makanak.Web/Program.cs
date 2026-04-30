@@ -27,13 +27,13 @@ builder.Services.InjectAutoMapperService();
 builder.Services.AddSwaggerDocumentation();
 
 builder.Services.AddSignalR();
-builder.Services.Configure<PaymobSettings>(builder.Configuration.GetSection("StripeSettings"));
 
 
 
 // Build the Application
 var app = builder.Build();
-
+// في Program.cs مؤقتاً
+Console.WriteLine($"ENV: {app.Environment.EnvironmentName}");
 // Data Seeding Configuration
 await app.SeedDatabaseAsync();
 

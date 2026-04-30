@@ -35,5 +35,10 @@ namespace Makanak.Shared.EnumsHelper.Booking
 
         //فيه مشكلة أو خناقة لسه بتتحل
         Disputed = 8,
+
+        // المستأجر طلب استرجاع العربون
+        RefundRequested = 9,
+
+        Refunded = 10,
     }
 }

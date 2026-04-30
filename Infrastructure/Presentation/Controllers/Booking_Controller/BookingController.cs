@@ -1,6 +1,7 @@
 ﻿using Makanak.Abstraction.IServices.Manager;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Booking_Params;
+using Makanak.Shared.Dto_s.Admin;
 using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.Responses;
@@ -72,19 +73,23 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
             return Success(bookings);
         }
 
-        [HttpPut("{id}/cancel")]
-        public async Task<ActionResult<ApiResponse<string>>> CancelBooking(int id)
+        [HttpPost("{bookingId}/cancel")]
+        [Authorize] 
+        public async Task<ActionResult> CancelBooking(int bookingId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
+            var role = User.FindFirstValue(ClaimTypes.Role) ?? "User";
 
-            var result = await serviceManager.BookingService.CancelBookingAsync(id, userId, userRole);
+            if (string.IsNullOrEmpty(userId))
+                return UnauthorizedError("User ID not found in token.");
 
-            if (!result) return BadRequestError("Failed to cancel booking");
+            var result = await serviceManager.BookingService.CancelBookingAsync(bookingId, userId, role);
 
-            return Success("Booking cancelled successfully");
+            if (!result)
+                return BadRequestError("Failed to cancel the booking.");
+
+            return Success("Booking cancelled successfully.");
         }
-
         [Authorize(Roles = "Owner")]
         [HttpPost("scan-qr")]
         public async Task<ActionResult<ApiResponse<BookingDto>>> ScanQrCode([FromBody] ScanQrRequestDto scanQrRequestDto)
@@ -124,5 +129,26 @@ namespace Makanak.Presentation.Controllers.Booking_Controller
 
             return Success(result, "Payment Initiated Successfully");
         }
+
+        [HttpGet("admin/all")]
+        [Authorize(Roles = "Admin")] // 🔒 حماية صارمة للأدمن فقط
+        public async Task<ActionResult<Pagination<BookingDto>>> GetAllBookingsForAdmin([FromQuery] BookingSpecParams bookingParams)
+        {
+            var result = await serviceManager.BookingService.GetAllBookingsForAdminAsync(bookingParams);
+
+            if (result == null)
+                return BadRequestError("Error retrieving bookings for admin.");
+
+            return Success(result, "Bookings retrieved successfully.");
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("admin/{id}")]
+        public async Task<ActionResult<ApiResponse<AdminBookingDetailsDto>>> GetBookingForAdmin(int id)
+        {
+            var result = await serviceManager.BookingService.GetAdminBookingByIdAsync(id);
+
+            return Success(result);
+        }
+
     }
 }

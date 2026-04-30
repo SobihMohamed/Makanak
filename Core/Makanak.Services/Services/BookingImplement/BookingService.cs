@@ -14,6 +14,7 @@ using Makanak.Services.Specifications.BookingSpec;
 using Makanak.Services.Specifications.Property_Spec;
 using Makanak.Shared.Common;
 using Makanak.Shared.Common.Params.Booking_Params;
+using Makanak.Shared.Dto_s.Admin;
 using Makanak.Shared.Dto_s.Booking;
 using Makanak.Shared.Dto_s.Payment;
 using Makanak.Shared.EnumsHelper.Booking;
@@ -123,7 +124,26 @@ namespace Makanak.Services.Services.BookingImplement
         }
 
         #endregion
-      
+        public async Task<Pagination<BookingDto>> GetAllBookingsForAdminAsync(BookingSpecParams bookingParams)
+        {
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+
+            // 1. (Count Specs)
+            var countSpec = new AdminBookingPaginationSpecifications(bookingParams, isCount: true);
+            var totalItems = await bookingRepo.CountAsync(countSpec);
+
+            if (totalItems == 0)
+                return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, 0, new List<BookingDto>());
+
+            // 2. (Data Specs)
+            var dataSpec = new AdminBookingPaginationSpecifications(bookingParams, isCount: false);
+            var bookings = await bookingRepo.GetAllWithSpecificationAsync(dataSpec);
+
+            // 3. Mapping & Return
+            var data = mapper.Map<IReadOnlyList<BookingDto>>(bookings);
+
+            return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, totalItems, data);
+        }
         public async Task<Pagination<BookingDto>> GetOwnerBookingsAsync(string ownerId, BookingSpecParams bookingParams)
         {
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
@@ -146,7 +166,6 @@ namespace Makanak.Services.Services.BookingImplement
 
             return new Pagination<BookingDto>(bookingParams.PageIndex, bookingParams.PageSize, totalItems, data);
         }
-
         public async Task<Pagination<BookingDto>> GetTenantBookingsAsync(string tenantId, BookingSpecParams bookingParams)
         {
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
@@ -235,58 +254,59 @@ namespace Makanak.Services.Services.BookingImplement
                 throw new BadRequestException("Only bookings that are not checked-in or completed can be canceled.");
 
             string cancelledBy = (userId == booking.TenantId) ? "Tenant" : (userId == booking.OwnerId ? "Owner" : "Admin");
-
-            // 💡 حفظنا الحالة قبل ما نغيرها
             bool wasPaid = booking.Status == BookingStatus.PaymentReceived;
+            decimal refundAmount = 0;
 
+            // 💡 1. حساب الفلوس (بدون ما نكلم بيموب)
             if (wasPaid)
             {
-                decimal refundAmount = 0;
-
-                // if cancelled by owner or admin, refund full commission
                 if (cancelledBy == "Owner" || cancelledBy == "Admin")
                     refundAmount = booking.CommissionPaid;
-                else // if cancelled by tenant, apply the time-based refund rules
+                else
                     refundAmount = CalculateRefundAmount(booking.CheckInDate, booking.CommissionPaid);
-
-                if (refundAmount > 0)
-                {
-                    if (string.IsNullOrEmpty(booking.TransactionId))
-                        throw new BadRequestException("Cannot refund: Transaction ID is missing.");
-
-                    bool refundSuccess = await paymentService.RefundTransactionAsync(booking.TransactionId, refundAmount);
-
-                    if (!refundSuccess)
-                        throw new Exception("Failed to process refund with the payment gateway.");
-
-                    booking.IsRefunded = true;
-                    booking.RefundedAmount = refundAmount;
-                }
             }
 
-            // Update booking status and reason
-            booking.Status = BookingStatus.Cancelled;
-            booking.CancellationReason = $"Cancelled by {cancelledBy}. Refund policy applied.";
+            // 💡 2. تحديد الحالة بناءً على الفلوس
+            if (refundAmount > 0)
+            {
+                // العميل ليه فلوس -> نخلي الحالة طلب استرداد عشان الأدمن يشوفها
+                booking.Status = BookingStatus.RefundRequested;
+                booking.RefundedAmount = refundAmount; // نسجل المبلغ المفروض يرجع
+                booking.IsRefunded = false; // لسه مرجعش فعلياً
+                booking.CancellationReason = $"Cancelled by {cancelledBy}. Refund of {refundAmount} EGP requested.";
+            }
+            else
+            {
+                // العميل ملوش فلوس -> نكنسل فوراً
+                booking.Status = BookingStatus.Cancelled;
+                booking.CancellationReason = $"Cancelled by {cancelledBy}. No refund applicable.";
+            }
 
             bookingRepo.Update(booking);
             var result = await unitOfWork.SaveChangesAsync();
 
-            // send notifications only if the cancellation was successful
+            // 💡 3. الإشعارات
             if (result > 0)
             {
-                // 1. send to the other party (owner or tenant) about the cancellation
                 string targetId = (userId == booking.TenantId) ? booking.OwnerId : booking.TenantId;
                 await notificationService.SendNotificationAsync(
                     NotificationFactory.BookingCancelled(targetId, cancelledBy, booking.Id)
                 );
 
-                // 2. send refund status notification to tenant if applicable
-                // ✅ هنا صلحناها واستخدمنا wasPaid
-                if (wasPaid && cancelledBy == "Tenant")
+                if (refundAmount > 0)
                 {
                     await notificationService.SendNotificationAsync(
-                        NotificationFactory.RefundStatusNotification(booking.TenantId, booking.IsRefunded, booking.Id)
+                        NotificationFactory.RefundStatusNotification(booking.TenantId, false, booking.Id)
                     );
+
+                    var adminIds = await GetAdminUserIdsAsync(); 
+
+                    foreach (var adminId in adminIds)
+                    {
+                        await notificationService.SendNotificationAsync(
+                            NotificationFactory.AdminManualRefundRequired(adminId, booking.Id, refundAmount)
+                        );
+                    }
                 }
             }
 
@@ -395,21 +415,21 @@ namespace Makanak.Services.Services.BookingImplement
             return paymentDto;
         }
 
-        public async Task<bool> UpdateBookingStatusByIntentIdAsync(string paymentIntentId, BookingStatus newStatus, string? transactionId = null)
+        public async Task<bool> UpdateBookingStatusByBookingIdAsync(int bookingId, BookingStatus newStatus, string? transactionId = null)
         {
-            var spec = new BookingPaymentSpecififcations(paymentIntentId);
+            var spec = new BookingPaymentSpecififcations(bookingId);
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
             var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
 
             if (booking == null)
-                throw new BookingNotFoundByPaymentIntentId(paymentIntentId);
+            {
+                throw new BookingNotFound(bookingId);
+            }
 
             booking.Status = newStatus;
 
-            if (newStatus == BookingStatus.PaymentReceived && !string.IsNullOrEmpty(transactionId))
-            {
+            if (!string.IsNullOrWhiteSpace(transactionId))
                 booking.TransactionId = transactionId;
-            }
 
             if (newStatus == BookingStatus.Completed)
                 booking.IsQrScanned = true;
@@ -419,21 +439,27 @@ namespace Makanak.Services.Services.BookingImplement
 
             if (result > 0 && newStatus == BookingStatus.PaymentReceived)
             {
-                // 1. إشعار للمستأجر: مبروك، خد العنوان والتفاصيل
-                await notificationService.SendNotificationAsync(
-                    NotificationFactory.PaymentSuccess_ToTenant(booking.TenantId, booking.Property.Title, booking.Id)
-                );
+                try
+                {
+                    var propertyTitle = booking.Property?.Title ?? "العقار";
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.PaymentSuccess_ToTenant(booking.TenantId, propertyTitle, booking.Id)
+                    );
 
-                // 2. إشعار للمالك: فيه فلوس وحجز اتأكد
-                // (تأكد إن الـ Spec محملة بيانات الـ TenantName)
-                await notificationService.SendNotificationAsync(
-                    NotificationFactory.PaymentSuccess_ToOwner(booking.OwnerId, booking.Tenant.Name, booking.Id)
-                );
+                    var tenantName = booking.Tenant?.Name ?? "عميل";
+                    await notificationService.SendNotificationAsync(
+                        NotificationFactory.PaymentSuccess_ToOwner(booking.OwnerId, tenantName, booking.Id)
+                    );
+                }
+                catch (Exception ex)
+                {
+                    throw new BadRequestException("Error sending payment success notifications.");
+                }
             }
 
             return result > 0;
         }
-
+        
         public async Task ProcessAutomatedStatusesAsync()
         {
             var bookingRepo = unitOfWork.GetRepo<Booking, int>();
@@ -551,7 +577,19 @@ namespace Makanak.Services.Services.BookingImplement
 
             return mappedData;
         }
+        public async Task<AdminBookingDetailsDto> GetAdminBookingByIdAsync(int bookingId)
+        {
+            var spec = new AdminBookingDetailsSpecifications(bookingId);
+            var bookingRepo = unitOfWork.GetRepo<Booking, int>();
+            var booking = await bookingRepo.GetByIdWithSpecificationsAsync(spec);
 
+            if (booking == null)
+                throw new BookingNotFound(bookingId);
+
+            var dto = mapper.Map<AdminBookingDetailsDto>(booking);
+
+            return dto;
+        }
         public async Task<OwnerBookingDetailsDto> GetOwnerBookingByIdAsync(int bookingId, string ownerId)
         {
             var spec = new BookingSpecifications(bookingId);
@@ -589,6 +627,14 @@ namespace Makanak.Services.Services.BookingImplement
                 return commissionPaid * 0.5m;
             else
                 return 0m;
+        }
+        private async Task<List<string>> GetAdminUserIdsAsync()
+        {
+            var admins = await userManager.GetUsersInRoleAsync("Admin");
+
+            var adminIds = admins.Select(admin => admin.Id).ToList();
+
+            return adminIds;
         }
     }
 }

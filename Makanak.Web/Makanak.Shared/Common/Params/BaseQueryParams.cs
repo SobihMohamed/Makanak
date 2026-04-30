@@ -9,7 +9,13 @@ namespace Makanak.Shared.Common.Params
         private const int maxPageSize = 50;
         private int _pageSize = 8;
 
-        public int PageIndex { get; set; } = 1;
+        private int _pageIndex = 1; 
+
+        public int PageIndex
+        {
+            get => _pageIndex;
+            set => _pageIndex = (value <= 0) ? 1 : value;
+        }
         public int PageSize
         {
             get { return _pageSize; }

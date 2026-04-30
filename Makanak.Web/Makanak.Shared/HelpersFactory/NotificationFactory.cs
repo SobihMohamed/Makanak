@@ -91,7 +91,17 @@ namespace Makanak.Shared.HelpersFactory
         // --------------------------------------------------------
         // 3. الإلغاء وانتهاء الوقت (Cancellation)
         // --------------------------------------------------------
-
+        public static CreateNotificationDto AdminManualRefundRequired(string adminId, int bookingId, decimal refundAmount)
+        {
+            return new CreateNotificationDto
+            {
+                UserId = adminId,
+                Title = "إجراء مطلوب: استرداد مالي (Refund) ⚠️",
+                Message = $"يوجد طلب إلغاء للحجز رقم #{bookingId}. العميل يستحق استرداد مبلغ {refundAmount} ج.م. يرجى إتمام عملية الاسترداد يدوياً من لوحة تحكم Paymob ثم تأكيد العملية من لوحة الإدارة.",
+                ReferenceId = bookingId.ToString(),
+                NotificationType = NotificationType.BookingCancelled // أو SystemAlert لو عندك نوع مخصص للإدارة
+            };
+        }
         public static CreateNotificationDto BookingCancelled(string targetUserId, string cancelledByWho, int bookingId)
         {
             return new CreateNotificationDto
@@ -131,6 +141,17 @@ namespace Makanak.Shared.HelpersFactory
                 Message = message,
                 ReferenceId = bookingId.ToString(),
                 NotificationType = NotificationType.BookingCancelled
+            };
+        }
+        public static CreateNotificationDto RefundRejected(string tenantId, int bookingId, string rejectionReason)
+        {
+            return new CreateNotificationDto
+            {
+                UserId = tenantId,
+                Title = "تم رفض طلب الاسترداد ❌",
+                Message = $"تمت مراجعة طلب الإلغاء للحجز الخاص بك. نعتذر، تقرر عدم الموافقة على استرداد المبلغ للسبب التالي: {rejectionReason}",
+                ReferenceId = bookingId.ToString(),
+                NotificationType = NotificationType.BookingCancelled // تقدر تخليها SystemAlert لو عندك النوع ده
             };
         }
         // --------------------------------------------------------

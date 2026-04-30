@@ -108,7 +108,7 @@ namespace Makanak.Services.Services.ManagerImplement
             _propertyService = new Lazy<IPropertyService>(() => new PropertyService(userManager,mapper,_attachementServices.Value, _Uow, NotificationService));
 
             _paymentService = new Lazy<IPaymentService>(() =>
-            new PaymentServices(options, httpClientFactory.CreateClient("PaymobClient")));
+            new PaymentServices(options, httpClientFactory, _Uow, NotificationService));
 
             _bookingService = new Lazy<IBookingService>(() => new BookingService(_paymentService.Value,_Uow, mapper , userManager,NotificationService));
             

@@ -35,10 +35,11 @@ namespace Makanak.Web.Extensions
             // DI & Caching
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            // في ApplicationServicesExtensions - امسح BaseAddress خالص
             services.AddHttpClient("PaymobClient", client =>
             {
-                client.BaseAddress = new Uri(paymobSettings!.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
+                // متحطش BaseAddress هنا خالص
             });
 
             services.AddScoped<IServiceManager, ServiceManager>();
