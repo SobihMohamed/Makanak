@@ -23,6 +23,7 @@
   <ItemGroup>
     <Folder Include="wwwroot\uploads\Disputes\" />
     <Folder Include="wwwroot\uploads\Properties\" />
+    <Folder Include="wwwroot\uploads\Users\" />
   </ItemGroup>
 
 </Project>
